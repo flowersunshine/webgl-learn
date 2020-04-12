@@ -8,7 +8,7 @@ module.exports = {
     devtool: 'inline-source-map',
     entry: './src/index.js',
     output: {
-        filename: '[name].[hash].bundle.js',
+        filename: '[name].bundle.js',
         path: path.resolve(__dirname, 'dist')
     },
     module: {
@@ -31,11 +31,11 @@ module.exports = {
         ]
     },
     plugins: [
+        new CleanWebpackPlugin(),
         new HtmlWebpackPlugin({
             template: './index.html'
         }),
-        new webpack.HotModuleReplacementPlugin(),
-        // new CleanWebpackPlugin()
+        new webpack.HotModuleReplacementPlugin()
     ],
     devServer: {
         contentBase: './dist',
