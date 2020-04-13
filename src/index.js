@@ -96,6 +96,27 @@ const click = (e, gl, canvas, a_Position, u_color, g_points, g_colors) => {
     // gl.drawArrays(gl.POINTS, 0, 1);
 };
 
+// 用缓存设置顶点位置
+const initVertexBuffers = gl => {
+    const vertices = new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5]);
+    // 点的个数
+    const n = 3;
+    // 创建缓冲区对象
+    const vertexBuffer = gl.createBuffer();
+    // 将缓冲区对象绑定到目标
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+    // 向缓冲区对象中写入数据
+    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+
+    const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+    // 将缓冲区对象分配给a_Position变量
+    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+    // 连接a_Position变量与分配给它的缓冲区对象.
+    gl.enableVertexAttribArray(a_Position);
+
+    return n;
+};
+
 window.onload = () => {
     const canvas = document.querySelector('#canvas');
     const gl = canvas.getContext('webgl');
@@ -129,11 +150,15 @@ window.onload = () => {
     gl.clearColor(0.5, 0.5, 0.5, 1.0);
     // 清空指定的缓冲区，颜色缓冲区的内容会自动渲染在浏览器上
     gl.clear(gl.COLOR_BUFFER_BIT);
-    const g_points = [];
-    const g_colors = [];
-    canvas.onclick = e => {
-        click(e, gl, canvas, a_Position, u_color, g_points, g_colors);
-    };
+    // const g_points = [];
+    // const g_colors = [];
+    // canvas.onclick = e => {
+    //     click(e, gl, canvas, a_Position, u_color, g_points, g_colors);
+    // };
     // 绘制一个点
     // gl.drawArrays(gl.POINTS, 0, 1);
+
+    const n = initVertexBuffers(gl);
+
+    gl.drawArrays(gl.POINTS, 0, n);
 };
