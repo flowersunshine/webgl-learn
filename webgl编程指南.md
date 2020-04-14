@@ -76,6 +76,86 @@
 
   将数据(v0, v1, v2, v3)传给由location参数指定的uniform变量。
 
+- createBuffer()
+
+  创建缓冲区对象。
+
+- deleteBuffer(buffer)
+
+  删除参数buffer表示的缓冲区对象。
+
+- bindBuffer(target, buffer)
+
+  允许使用buffer表示的缓冲区对象并将其绑定到target表示的目标上。
+
+  - target
+
+    可以是以下中的一个：
+
+    - gl.ARRAY_BUFFER 表示缓冲区对象中包含了顶点的数据；
+    - gl.ELEMENT_ARRAY_BUFFER 表示缓冲区对象中包含了顶点的索引值
+
+  - buffer
+
+    指定之前由createBuffer返回的待绑定的对象
+
+- bufferData(target, data, usage)
+
+  开辟存储空间，向绑定在target上的缓冲区对象中写入数据data
+
+  - target
+
+    gl.ARRAY_BUFFER或者是gl.ELEMENT_ARRAY_BUFFER
+
+  - data
+
+    写入缓冲区对象的数据（类型化数组）
+
+  - usage
+
+    表示程序将如何使用存储在缓冲区对象中的数据。该参数见帮助WebGL优化操作，但是就算你闯入了错误的值，也不会终止程序（仅仅是降低程序的效率）。可以为以下值：
+
+    - gl.STATIC_DRAW 只会向缓冲区对象中写入一次数据，但需要绘制很多次
+    - gl.STREAM_DRAW 只会向缓冲区对象中写入一次数据，然后绘制若干次
+    - gl.DYNAMIC_DRAW 会向缓冲区对象中多次写入数据，并绘制很多次
+
+- vertexAttribPointer(location, size, type, normalized, stride, offset)
+
+  将绑定到gl.ARRAY_BUFFER的缓冲区对象分配给由location指定的attribute变量。
+
+  - location
+
+    指定待分配变量的存储位置。
+
+  - size
+
+    指定缓冲区中每个顶点的分量个数（1到4）。若size比attribute变量需要的分量数小，缺失分量将按照与gl.vertexAttrib[1234]f()相同的规则补全。
+
+  - type
+
+    用以下类型之一来指定数据格式。
+
+    - gl.UNSIGNED_BYTE 无符号字节，Uint8Array
+    - gl.SHORT 短整形，Int16Array
+    - gl.UNSIGNED_SHORT 无符号短整形，Uint16Array
+    - gl.INT 整形，Int32Array
+    - gl.UNSIGNED_INT 无符号整形，Uint32Array
+    - gl.FLOAT 浮点数，Float32Array
+
+  - normalize
+
+    传入true或false，表明是否将非浮点型的数据归一化到[0,1]或[-1,1]区间
+
+  - stride
+
+    指定相邻两个顶点间的字节数，默认为0
+
+  - offset
+
+    指定缓冲区对象中的偏移量（以字节为单位），即attribute变量从缓冲区中的何处开始存储。
+
+  
+
 ### webgl中的坐标系
 
 webgl是一个三维的坐标系，x轴是横轴，正方向向右，y轴为竖轴，正方向向上，z轴为垂直于屏幕的，正方向向外。
@@ -101,6 +181,13 @@ canvas为二维坐标系，x轴是横轴，正方向向右，y轴为竖轴，正
   1. 在片段着色器中准备uniform变量；
   2. 用这个uniform变量向gl_FragColor赋值；
   3. 将颜色数据从JavaScript传给该uniform变量；
+
+- 使用缓冲区对象向顶点着色器传入多个顶点的数据的步骤
+  1. 创建缓冲区对象。
+  2. 绑定缓冲区对象。
+  3. 将数据写入缓冲区对象。
+  4. 将缓冲区对象分配给一个attribute变量。
+  5. 开启attribute变量。
 
 ### GLSL ES语言
 
