@@ -1,3 +1,5 @@
+import * as glMatrix from 'gl-matrix';
+
 // 从字符串中加载着色器程序
 const loadShader = (gl, type, source) => {
     // Create shader object
@@ -122,8 +124,16 @@ const initVertexBuffers = gl => {
     // const u_SinA = gl.getUniformLocation(gl.program, 'u_SinA');
     // const u_CosA = gl.getUniformLocation(gl.program, 'u_CosA');
     // gl.uniform4f(u_Translate, 0.3, 0.3, 0.0, 0.0);
-    const u_ZFormMatrix = gl.getUniformLocation(gl.program, 'u_ZFormMatrix');
-    gl.uniformMatrix4fv(u_ZFormMatrix, false, createZMatrix(Math.PI / 4));
+    const u_ModalMatrix = gl.getUniformLocation(gl.program, 'u_ModalMatrix');
+    // 创建变换矩阵，先旋转，再平移
+    const mat4Rotate = glMatrix.mat4.create();
+    glMatrix.mat4.fromRotation(mat4Rotate, Math.PI / 4, glMatrix.vec3.fromValues(0, 0, 1));
+
+    const mat4Translate = glMatrix.mat4.create();
+    glMatrix.mat4.fromTranslation(mat4Translate, glMatrix.vec3.fromValues(0.3, 0.3, 0));
+    glMatrix.mat4.multiply(mat4Rotate, mat4Translate, mat4Rotate);
+    // gl.uniformMatrix4fv(u_ZFormMatrix, false, createZMatrix(Math.PI / 4));
+    gl.uniformMatrix4fv(u_ModalMatrix, false, mat4Rotate);
     // 将缓冲区对象分配给a_Position变量
     gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
     // gl.uniform1f(u_CosA, Math.cos(Math.PI / 4));
@@ -147,7 +157,7 @@ window.onload = () => {
         // attribute float a_PointSize;
         // uniform vec4 u_Translate;
         // uniform float u_CosA, u_SinA; // 旋转
-        uniform mat4 u_ZFormMatrix; 
+        uniform mat4 u_ModalMatrix;
         void main() { // 不可以指定参数
             // 平移gl_Position = a_Position + u_Translate; // 设置坐标位置,内置的变量
             // gl_PointSize = a_PointSize;  设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
@@ -155,7 +165,7 @@ window.onload = () => {
             // gl_Position.y = a_Position.x * u_SinA + a_Position.y * u_CosA;
             // gl_Position.z = a_Position.z;
             // gl_Position.w = a_Position.w;
-            gl_Position = u_ZFormMatrix * a_Position;
+            gl_Position = u_ModalMatrix * a_Position;
         }
     `;
     // 片段着色器
