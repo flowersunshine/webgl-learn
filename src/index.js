@@ -96,11 +96,20 @@ const click = (e, gl, canvas, a_Position, u_color, g_points, g_colors) => {
     // gl.drawArrays(gl.POINTS, 0, 1);
 };
 
+// 创建绕着z轴旋转的旋转矩阵
+const createZMatrix = a => {
+    return new Float32Array([
+        Math.cos(a), Math.sin(a), 0.0, 0.0,
+        -Math.sin(a), Math.cos(a), 0.0, 0.0,
+        0.0, 0.0, 1.0, 0.0,
+        0.0, 0.0, 0.0, 1.0
+    ]);
+}
 // 用缓存设置顶点位置
 const initVertexBuffers = gl => {
-    const vertices = new Float32Array([0.0, 0.5, -0.5, -0.5, 0.5, -0.5]);
+    const vertices = new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5]);
     // 点的个数
-    const n = 3;
+    const n = vertices.length / 2;
     // 创建缓冲区对象
     const vertexBuffer = gl.createBuffer();
     // 将缓冲区对象绑定到目标
@@ -109,8 +118,16 @@ const initVertexBuffers = gl => {
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
 
     const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+    // const u_Translate = gl.getUniformLocation(gl.program, 'u_Translate');
+    // const u_SinA = gl.getUniformLocation(gl.program, 'u_SinA');
+    // const u_CosA = gl.getUniformLocation(gl.program, 'u_CosA');
+    // gl.uniform4f(u_Translate, 0.3, 0.3, 0.0, 0.0);
+    const u_ZFormMatrix = gl.getUniformLocation(gl.program, 'u_ZFormMatrix');
+    gl.uniformMatrix4fv(u_ZFormMatrix, false, createZMatrix(Math.PI / 4));
     // 将缓冲区对象分配给a_Position变量
     gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+    // gl.uniform1f(u_CosA, Math.cos(Math.PI / 4));
+    // gl.uniform1f(u_SinA, Math.sin(Math.PI / 4));
     // 连接a_Position变量与分配给它的缓冲区对象.
     gl.enableVertexAttribArray(a_Position);
 
@@ -122,11 +139,23 @@ window.onload = () => {
     const gl = canvas.getContext('webgl');
     // 设置顶点着色器
     const VSHADER_SOURCE = `
+        // 旋转公式
+        // x' = x*cos(a) - y*sin(a)
+        // y' = x*sin(a) + y*cos(a)
+        // z' = z
         attribute vec4 a_Position;  // 用于从外部传输变量
-        attribute float a_PointSize;
+        // attribute float a_PointSize;
+        // uniform vec4 u_Translate;
+        // uniform float u_CosA, u_SinA; // 旋转
+        uniform mat4 u_ZFormMatrix; 
         void main() { // 不可以指定参数
-            gl_Position = a_Position; // 设置坐标位置,内置的变量
-            gl_PointSize = a_PointSize; // 设置点的尺寸，内置的变量
+            // 平移gl_Position = a_Position + u_Translate; // 设置坐标位置,内置的变量
+            // gl_PointSize = a_PointSize;  设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
+            // gl_Position.x = a_Position.x * u_CosA - a_Position.y * u_SinA;
+            // gl_Position.y = a_Position.x * u_SinA + a_Position.y * u_CosA;
+            // gl_Position.z = a_Position.z;
+            // gl_Position.w = a_Position.w;
+            gl_Position = u_ZFormMatrix * a_Position;
         }
     `;
     // 片段着色器
@@ -140,12 +169,13 @@ window.onload = () => {
     // 初始化着色器
     initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
     // 获取attribute变量的存储位置
-    const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-    const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
-    const u_color = gl.getUniformLocation(gl.program, 'u_color');
+    // const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+    // const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+    // const u_color = gl.getUniformLocation(gl.program, 'u_color');
+    // const u_Translate = gl.getUniformLocation(gl.program, 'u_Translate');
     // 将顶点位置传输给attitude变量
     // gl.vertexAttrib4f(a_Position, 0.5, -0.5, 0.0, 1.0);
-    gl.vertexAttrib1f(a_PointSize, 10.0);
+    // gl.vertexAttrib1f(a_PointSize, 10.0);
     // 设置清空的颜色值
     gl.clearColor(0.5, 0.5, 0.5, 1.0);
     // 清空指定的缓冲区，颜色缓冲区的内容会自动渲染在浏览器上
@@ -160,5 +190,5 @@ window.onload = () => {
 
     const n = initVertexBuffers(gl);
 
-    gl.drawArrays(gl.POINTS, 0, n);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
 };
