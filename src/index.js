@@ -106,7 +106,9 @@ const createZMatrix = a => {
         0.0, 0.0, 1.0, 0.0,
         0.0, 0.0, 0.0, 1.0
     ]);
-}
+};
+
+let radius = 0; // 旋转角度
 // 用缓存设置顶点位置
 const initVertexBuffers = gl => {
     const vertices = new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5]);
@@ -124,16 +126,7 @@ const initVertexBuffers = gl => {
     // const u_SinA = gl.getUniformLocation(gl.program, 'u_SinA');
     // const u_CosA = gl.getUniformLocation(gl.program, 'u_CosA');
     // gl.uniform4f(u_Translate, 0.3, 0.3, 0.0, 0.0);
-    const u_ModalMatrix = gl.getUniformLocation(gl.program, 'u_ModalMatrix');
-    // 创建变换矩阵，先旋转，再平移
-    const mat4Rotate = glMatrix.mat4.create();
-    glMatrix.mat4.fromRotation(mat4Rotate, Math.PI / 4, glMatrix.vec3.fromValues(0, 0, 1));
-
-    const mat4Translate = glMatrix.mat4.create();
-    glMatrix.mat4.fromTranslation(mat4Translate, glMatrix.vec3.fromValues(0.3, 0.3, 0));
-    glMatrix.mat4.multiply(mat4Rotate, mat4Translate, mat4Rotate);
-    // gl.uniformMatrix4fv(u_ZFormMatrix, false, createZMatrix(Math.PI / 4));
-    gl.uniformMatrix4fv(u_ModalMatrix, false, mat4Rotate);
+    
     // 将缓冲区对象分配给a_Position变量
     gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
     // gl.uniform1f(u_CosA, Math.cos(Math.PI / 4));
@@ -144,6 +137,26 @@ const initVertexBuffers = gl => {
     return n;
 };
 
+// 绘制图形
+const draw = (gl, n) => {
+    
+    const u_ModalMatrix = gl.getUniformLocation(gl.program, 'u_ModalMatrix');
+    // 创建变换矩阵，先旋转，再平移
+    const mat4Rotate = glMatrix.mat4.create();
+    glMatrix.mat4.fromRotation(mat4Rotate, (radius / 180) % 2 * Math.PI, glMatrix.vec3.fromValues(0, 0, 1));
+
+    // const mat4Translate = glMatrix.mat4.create();
+    // glMatrix.mat4.fromTranslation(mat4Translate, glMatrix.vec3.fromValues(0.3, 0.3, 0));
+    // glMatrix.mat4.multiply(mat4Rotate, mat4Translate, mat4Rotate);
+    // gl.uniformMatrix4fv(u_ZFormMatrix, false, createZMatrix(Math.PI / 4));
+    gl.uniformMatrix4fv(u_ModalMatrix, false, mat4Rotate);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+    radius += 1;
+    requestAnimationFrame(() =>{
+        draw(gl, n);
+    });
+}
 window.onload = () => {
     const canvas = document.querySelector('#canvas');
     const gl = canvas.getContext('webgl');
@@ -189,7 +202,7 @@ window.onload = () => {
     // 设置清空的颜色值
     gl.clearColor(0.5, 0.5, 0.5, 1.0);
     // 清空指定的缓冲区，颜色缓冲区的内容会自动渲染在浏览器上
-    gl.clear(gl.COLOR_BUFFER_BIT);
+    // gl.clear(gl.COLOR_BUFFER_BIT);
     // const g_points = [];
     // const g_colors = [];
     // canvas.onclick = e => {
@@ -198,7 +211,10 @@ window.onload = () => {
     // 绘制一个点
     // gl.drawArrays(gl.POINTS, 0, 1);
 
+    // const n = initVertexBuffers(gl);
+    // gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+    gl.clear(gl.COLOR_BUFFER_BIT);
     const n = initVertexBuffers(gl);
 
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+    draw(gl, n);
 };
