@@ -111,29 +111,40 @@ const createZMatrix = a => {
 let radius = 0; // 旋转角度
 // 用缓存设置顶点位置
 const initVertexBuffers = gl => {
-    const vertices = new Float32Array([-0.5, 0.5, 0.5, 0.5, -0.5, -0.5, 0.5, -0.5]);
+    const vertices = new Float32Array([
+        -0.5, 0.5, 10.0, 1.0, 0.0, 0.0, 1.0,
+        0.5, 0.5, 20.0, 0.0, 1.0, 0.0, 1.0,
+        -0.5, -0.5, 30.0, 0.0, 0.0, 1.0, 1.0
+    ]);
     // 点的个数
-    const n = vertices.length / 2;
+    const n = vertices.length / 7;
     // 创建缓冲区对象
     const vertexBuffer = gl.createBuffer();
     // 将缓冲区对象绑定到目标
     gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
     // 向缓冲区对象中写入数据
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-
     const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
     // const u_Translate = gl.getUniformLocation(gl.program, 'u_Translate');
     // const u_SinA = gl.getUniformLocation(gl.program, 'u_SinA');
     // const u_CosA = gl.getUniformLocation(gl.program, 'u_CosA');
     // gl.uniform4f(u_Translate, 0.3, 0.3, 0.0, 0.0);
     
+    const FSIZE = vertices.BYTES_PER_ELEMENT;
     // 将缓冲区对象分配给a_Position变量
-    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, 0, 0);
+    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, FSIZE * 7, 0);
     // gl.uniform1f(u_CosA, Math.cos(Math.PI / 4));
     // gl.uniform1f(u_SinA, Math.sin(Math.PI / 4));
     // 连接a_Position变量与分配给它的缓冲区对象.
     gl.enableVertexAttribArray(a_Position);
 
+    const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+    gl.vertexAttribPointer(a_PointSize, 1, gl.FLOAT, false, FSIZE * 7, FSIZE * 2);
+    gl.enableVertexAttribArray(a_PointSize);
+
+    const a_color = gl.getAttribLocation(gl.program, 'a_color');
+    gl.vertexAttribPointer(a_color, 4, gl.FLOAT, false, FSIZE * 7, FSIZE * 3);
+    gl.enableVertexAttribArray(a_color);
     return n;
 };
 
@@ -141,7 +152,7 @@ const initVertexBuffers = gl => {
 const draw = (gl, n) => {
     
     const u_ModalMatrix = gl.getUniformLocation(gl.program, 'u_ModalMatrix');
-    // 创建变换矩阵，先旋转，再平移
+    // 创建变换矩阵，先旋转，再平移 
     const mat4Rotate = glMatrix.mat4.create();
     glMatrix.mat4.fromRotation(mat4Rotate, (radius / 180) % 2 * Math.PI, glMatrix.vec3.fromValues(0, 0, 1));
 
@@ -162,38 +173,30 @@ window.onload = () => {
     const gl = canvas.getContext('webgl');
     // 设置顶点着色器
     const VSHADER_SOURCE = `
-        // 旋转公式
-        // x' = x*cos(a) - y*sin(a)
-        // y' = x*sin(a) + y*cos(a)
-        // z' = z
         attribute vec4 a_Position;  // 用于从外部传输变量
-        // attribute float a_PointSize;
-        // uniform vec4 u_Translate;
-        // uniform float u_CosA, u_SinA; // 旋转
-        uniform mat4 u_ModalMatrix;
+        attribute float a_PointSize;
+        attribute vec4 a_color;
+        // uniform mat4 u_ModalMatrix;
+        varying vec4 v_color;
         void main() { // 不可以指定参数
-            // 平移gl_Position = a_Position + u_Translate; // 设置坐标位置,内置的变量
-            // gl_PointSize = a_PointSize;  设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
-            // gl_Position.x = a_Position.x * u_CosA - a_Position.y * u_SinA;
-            // gl_Position.y = a_Position.x * u_SinA + a_Position.y * u_CosA;
-            // gl_Position.z = a_Position.z;
-            // gl_Position.w = a_Position.w;
-            gl_Position = u_ModalMatrix * a_Position;
+            gl_Position = a_Position; // 设置坐标位置,内置的变量
+            gl_PointSize = a_PointSize;  // 设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
+            // gl_Position = u_ModalMatrix * a_Position;
+            v_color = a_color;
         }
     `;
     // 片段着色器
     const FSHADER_SOURCE = `
         precision mediump float;
-        uniform vec4 u_color;
+        varying vec4 v_color;
         void main() {
-            gl_FragColor = u_color; // 设置颜色,内置的变量
+            gl_FragColor = v_color; // 设置颜色,内置的变量
         }
     `;
     // 初始化着色器
     initShaders(gl, VSHADER_SOURCE, FSHADER_SOURCE);
     // 获取attribute变量的存储位置
     // const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-    // const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
     // const u_color = gl.getUniformLocation(gl.program, 'u_color');
     // const u_Translate = gl.getUniformLocation(gl.program, 'u_Translate');
     // 将顶点位置传输给attitude变量
@@ -202,19 +205,20 @@ window.onload = () => {
     // 设置清空的颜色值
     gl.clearColor(0.5, 0.5, 0.5, 1.0);
     // 清空指定的缓冲区，颜色缓冲区的内容会自动渲染在浏览器上
-    // gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.clear(gl.COLOR_BUFFER_BIT);
     // const g_points = [];
     // const g_colors = [];
     // canvas.onclick = e => {
     //     click(e, gl, canvas, a_Position, u_color, g_points, g_colors);
     // };
     // 绘制一个点
-    // gl.drawArrays(gl.POINTS, 0, 1);
+    const n = initVertexBuffers(gl);
+    gl.drawArrays(gl.TRIANGLES, 0, n);
 
     // const n = initVertexBuffers(gl);
     // gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    const n = initVertexBuffers(gl);
+    // gl.clear(gl.COLOR_BUFFER_BIT);
+    // const n = initVertexBuffers(gl);
 
-    draw(gl, n);
+    // draw(gl, n);
 };
