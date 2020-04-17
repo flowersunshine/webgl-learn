@@ -112,9 +112,10 @@ let radius = 0; // 旋转角度
 // 用缓存设置顶点位置
 const initVertexBuffers = gl => {
     const vertices = new Float32Array([
-        -0.5, 0.5, 10.0, 1.0, 0.0, 0.0, 1.0,
-        0.5, 0.5, 20.0, 0.0, 1.0, 0.0, 1.0,
-        -0.5, -0.5, 30.0, 0.0, 0.0, 1.0, 1.0
+        -0.5, 0.5, 0.0, 1.0,
+        -0.5, -0.5, 0.0, 0.0,
+        0.5, 0.5, 1.0, 1.0,
+        0.5, -0.5, 1.0, 0.0
     ]);
     // 点的个数
     const n = vertices.length / 7;
@@ -148,6 +149,11 @@ const initVertexBuffers = gl => {
     return n;
 };
 
+// 初始化纹理信息
+const initTextures = (gl, n) => {
+
+};
+
 // 绘制图形
 const draw = (gl, n) => {
     
@@ -167,7 +173,8 @@ const draw = (gl, n) => {
     requestAnimationFrame(() =>{
         draw(gl, n);
     });
-}
+};
+
 window.onload = () => {
     const canvas = document.querySelector('#canvas');
     const gl = canvas.getContext('webgl');
@@ -176,21 +183,29 @@ window.onload = () => {
         attribute vec4 a_Position;  // 用于从外部传输变量
         attribute float a_PointSize;
         attribute vec4 a_color;
+        attribute vec2 a_textCoord;
         // uniform mat4 u_ModalMatrix;
         varying vec4 v_color;
+        varying vec2 v_textCoord;
         void main() { // 不可以指定参数
             gl_Position = a_Position; // 设置坐标位置,内置的变量
             gl_PointSize = a_PointSize;  // 设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
             // gl_Position = u_ModalMatrix * a_Position;
             v_color = a_color;
+            v_textCoord = a_textCoord;
         }
     `;
     // 片段着色器
     const FSHADER_SOURCE = `
         precision mediump float;
         varying vec4 v_color;
+        varying vec2 v_textCoord;
+        uniform sampler2D u_sampler;
+        uniform float u_width;
+        uniform float u_height;
         void main() {
-            gl_FragColor = v_color; // 设置颜色,内置的变量
+            // gl_FragColor = vec4(gl_FragCoord.x / 800.0, 0.0, gl_FragCoord.y / 800.0, 1.0); // 设置颜色,内置的变量
+            gl_FragColor = texture2D(u_sampler, v_textCoord);
         }
     `;
     // 初始化着色器
@@ -213,6 +228,7 @@ window.onload = () => {
     // };
     // 绘制一个点
     const n = initVertexBuffers(gl);
+    initTextures(gl, n);
     gl.drawArrays(gl.TRIANGLES, 0, n);
 
     // const n = initVertexBuffers(gl);
