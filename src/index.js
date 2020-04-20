@@ -112,13 +112,14 @@ let radius = 0; // 旋转角度
 // 用缓存设置顶点位置
 const initVertexBuffers = gl => {
     const vertices = new Float32Array([
+        // 顶点坐标，纹理坐标
         -0.5, 0.5, 0.0, 1.0,
         -0.5, -0.5, 0.0, 0.0,
         0.5, 0.5, 1.0, 1.0,
         0.5, -0.5, 1.0, 0.0
     ]);
     // 点的个数
-    const n = vertices.length / 7;
+    const n = vertices.length / 4;
     // 创建缓冲区对象
     const vertexBuffer = gl.createBuffer();
     // 将缓冲区对象绑定到目标
@@ -126,6 +127,7 @@ const initVertexBuffers = gl => {
     // 向缓冲区对象中写入数据
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
     const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
+    const a_textCoord = gl.getAttribLocation(gl.program, 'a_textCoord');
     // const u_Translate = gl.getUniformLocation(gl.program, 'u_Translate');
     // const u_SinA = gl.getUniformLocation(gl.program, 'u_SinA');
     // const u_CosA = gl.getUniformLocation(gl.program, 'u_CosA');
@@ -133,15 +135,15 @@ const initVertexBuffers = gl => {
     
     const FSIZE = vertices.BYTES_PER_ELEMENT;
     // 将缓冲区对象分配给a_Position变量
-    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, FSIZE * 7, 0);
+    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, FSIZE * 4, 0);
     // gl.uniform1f(u_CosA, Math.cos(Math.PI / 4));
     // gl.uniform1f(u_SinA, Math.sin(Math.PI / 4));
     // 连接a_Position变量与分配给它的缓冲区对象.
     gl.enableVertexAttribArray(a_Position);
 
-    const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
-    gl.vertexAttribPointer(a_PointSize, 1, gl.FLOAT, false, FSIZE * 7, FSIZE * 2);
-    gl.enableVertexAttribArray(a_PointSize);
+    // const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
+    gl.vertexAttribPointer(a_textCoord, 1, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
+    gl.enableVertexAttribArray(a_textCoord);
 
     const a_color = gl.getAttribLocation(gl.program, 'a_color');
     gl.vertexAttribPointer(a_color, 4, gl.FLOAT, false, FSIZE * 7, FSIZE * 3);
@@ -151,7 +153,37 @@ const initVertexBuffers = gl => {
 
 // 初始化纹理信息
 const initTextures = (gl, n) => {
+    const texture = gl.createTexture(); // 创建纹理对象
+    const u_sampler = gl.getUniformLocation(gl.program, 'u_sampler');
 
+    const image = new Image();
+
+    image.onload = () => {
+        loadTexture(gl, n, texture, u_sampler, image);
+    };
+
+    image.src = '../resource/person.jpg';
+
+    return true;
+};
+
+// 加载纹理
+const loadTexture = (gl, n, texture, u_sampler, image) => {
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1); // 对纹理图像进行y轴反转
+    // 开启0号纹理单元
+    gl.activeTexture(gl.TEXTURE0);
+    // 向target绑定纹理对象
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    // 配置纹理参数
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    // 配置纹理图像
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+
+    // 将0号纹理传递给着色器
+    gl.uniform1i(u_sampler, 0);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
 };
 
 // 绘制图形

@@ -27,6 +27,17 @@ module.exports = {
                     path.resolve(__dirname, 'node_modules')
                 ],
                 use: ['babel-loader']
+            },
+            {
+                test: /\.(jpg|png|svg|gif)$/,
+                use: [
+                    {
+                        loader: 'url-loader',
+                        options: {
+                            limit: 10000
+                        }
+                    }
+                ]
             }
         ]
     },
