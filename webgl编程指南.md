@@ -214,7 +214,55 @@
 
     指定attribute变量的存储位置。
 
+- createTexture()
 
+  创建纹理对象以存储纹理图像。
+
+- deleteTexture(texture)
+
+  使用texture删除纹理对象。如果试图删除一个已经被删除的纹理对象，不会报错也不会产生任何影响。
+
+- pixelStorei(pname, param)
+
+  - pname
+    - gl.UNPACK_FLIP_Y_WEBGL 对图像进行Y轴反转，默认值为false；
+    - gl.UNPACK_PERMULTIPLY_ALPHA_WEBGL 将图像RGB颜色值的每一个分量乘以A，默认值为false；
+
+  - param
+
+    指定非0（true）或0（false）。必须为整数。
+
+- activeTexture(texUnit)
+
+  激活texUnit指定的纹理单元。
+
+- bindTexture(target, texture)
+
+  开启texture指定的纹理对象，并将其绑定到target（目标）上。此外，如果已经通过gl.activeTexture()激活了某个纹理单元，则纹理对象也会绑定到这个纹理单元上。
+
+  - target
+
+    gl.TEXTURE_2D或gl.TEXTURE_BUVE_MAP
+
+  - texture
+
+    表示绑定的纹理单元
+
+- texParameteri(target, pname, param)
+
+  将param的值赋给绑定到目标的纹理对象的pname参数上。
+
+  - target
+
+    gl.TEXTURE_2D或gl.TEXTURE_CUBE_MAP
+
+  - pname
+
+    纹理参数（参加下表）
+
+  - param
+
+    纹理参数的值（参加下表）
 
 ### webgl中的坐标系
 
@@ -298,6 +346,14 @@ $$
   2. 为几何图形配置纹理映射方式。
   3. 加载纹理图像，对其进行一些配置，以在webgl中使用它。
   4. 在片元着色器中将相应的纹素从纹理中抽取出来，并将纹素的颜色赋给片元。
+  
+  程序化的步骤分为：
+  
+  1. 顶点着色器中接收顶点的纹理坐标，光栅化后传递给片元着色器。
+  2. 片元着色器根据片元的纹理坐标，从纹理图像中抽取出纹素颜色，赋给当前片元。
+  3. 设置顶点的纹理坐标。
+  4. 准备待加载的纹理图像，令浏览器读取它。
+  5. 监听纹理图像的加载事件，一旦加载完成，就在WebGL系统中使用纹理。
 
 ### GLSL ES语言
 

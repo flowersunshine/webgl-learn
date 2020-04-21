@@ -1,4 +1,5 @@
 import * as glMatrix from 'gl-matrix';
+import personImage from './resource/person.jpg';
 
 // 从字符串中加载着色器程序
 const loadShader = (gl, type, source) => {
@@ -142,12 +143,12 @@ const initVertexBuffers = gl => {
     gl.enableVertexAttribArray(a_Position);
 
     // const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
-    gl.vertexAttribPointer(a_textCoord, 1, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
+    gl.vertexAttribPointer(a_textCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
     gl.enableVertexAttribArray(a_textCoord);
 
-    const a_color = gl.getAttribLocation(gl.program, 'a_color');
-    gl.vertexAttribPointer(a_color, 4, gl.FLOAT, false, FSIZE * 7, FSIZE * 3);
-    gl.enableVertexAttribArray(a_color);
+    // const a_color = gl.getAttribLocation(gl.program, 'a_color');
+    // gl.vertexAttribPointer(a_color, 4, gl.FLOAT, false, FSIZE * 7, FSIZE * 3);
+    // gl.enableVertexAttribArray(a_color);
     return n;
 };
 
@@ -162,7 +163,7 @@ const initTextures = (gl, n) => {
         loadTexture(gl, n, texture, u_sampler, image);
     };
 
-    image.src = '../resource/person.jpg';
+    image.src = personImage;
 
     return true;
 };
@@ -182,6 +183,8 @@ const loadTexture = (gl, n, texture, u_sampler, image) => {
 
     // 将0号纹理传递给着色器
     gl.uniform1i(u_sampler, 0);
+
+    console.log('画图了');
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
 };
@@ -261,7 +264,7 @@ window.onload = () => {
     // 绘制一个点
     const n = initVertexBuffers(gl);
     initTextures(gl, n);
-    gl.drawArrays(gl.TRIANGLES, 0, n);
+    // gl.drawArrays(gl.TRIANGLES, 0, n);
 
     // const n = initVertexBuffers(gl);
     // gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
