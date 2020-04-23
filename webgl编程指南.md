@@ -264,6 +264,93 @@
 
     纹理参数的值（参加下表）
 
+
+
+​		pname可以指定4个纹理参数
+
+- 放大方法：gl.TEXTURE_MAG_FILTER 当纹理的绘制范围比纹理本身更大时，如何获取纹素颜色。比如说，将16\*16的纹理图像映射到32\*32像素的空间里时，纹理的尺寸就变成了原始的两倍。WebGL需要填充由于放大而造成的像素间的空隙，该参数就表示填充这些空隙的具体方法。
+
+- 缩小方法：gl.TEXTURE_MIN_FILTER 当纹理的绘制范围比纹理本身更小时，如何获取纹素颜色。
+
+- 水平填充方法：gl.TEXTURE_WRAP_S 如何对纹理图像左侧或右侧的区域进行填充。
+
+- 垂直填充方法：gl.TEXTURE_WRAP_T 如何对纹理图像上方和下方的区域进行填充。
+
+  |       纹理参数        |     描述     |          默认值          |
+  | :-------------------: | :----------: | :----------------------: |
+  | gl.TEXTURE_MAG_FILTER |   纹理放大   |        gl.LINEAR         |
+  | gl.TEXTURE_MIN_FILTER |   纹理缩小   | gl.NEAREST_MIPMAP_LINEAR |
+  |   gl.TEXTURE_WRAP_S   | 纹理水平填充 |        gl.REPEAT         |
+  |   gl.TEXTURE_WRAP_T   | 纹理垂直填充 |        gl.REPEAT         |
+
+  可以赋值给gl.TEXTURE_MAG_FILTER和gl.TEXTURE_MIN_FILTER的非金字塔纹理类型常亮。
+
+  |     值     |                             描述                             |
+  | :--------: | :----------------------------------------------------------: |
+  | gl.NEAREST | 使用原纹理上距离映射后像素（新像素）中心最近的那个像素的颜色值，作为新像素的值（使用曼哈顿距离）。 |
+  | gl.LINEAR  | 使用距离新像素中心最近的四个像素的颜色值的加权平均， 作为新像素的值（与gl.NEAREST相比，该方法图像质量更好，但是会有较大的开销）。 |
+
+  可以赋值给gl.TEXTURE_WRAP_S和gl.TEXTURE_WRAP_T的常量。
+
+  | 值                 | 描述                 |
+  | ------------------ | -------------------- |
+  | gl.REPEAT          | 平铺式的重复纹理     |
+  | gl.MIRRORED_REPEAT | 镜像对称式的重复纹理 |
+  | gl.CLAMP_TO_EDGE   | 使用纹理图像边缘值   |
+
+- texImage2D(target, level, internalformat, format, type, image)
+
+  将image指定的图像分配给绑定到目标上的纹理图像。
+
+  - target
+
+    gl.TEXTURE_2D或gl.TEXTURE_CUBE_MAP
+
+  - level
+
+    传入0（本参数是为金字塔纹理准备的）
+
+  - internalformat
+
+    图像的内部格式（见下表）
+
+  - format
+
+    纹理数据的格式，必须使用与internalformat相同的值
+
+  - type
+
+    纹理数据的类型
+
+  - image
+
+    包含纹理图像的Image对象
+
+  format纹素数据的格式
+
+  |        格式        |          描述           |
+  | :----------------: | :---------------------: |
+  |       gl.RGB       |       红，绿，蓝        |
+  |      gl.RGBA       |   红，绿，蓝，透明度    |
+  |      gl.ALPHA      | (0,0, 0,0, 0.0, 透明度) |
+  |    gl.LUMINANCE    |    L, L, L, 1L:流明     |
+  | gl.LUMINANCE_ALPHA |     L, L, L, 透明度     |
+
+  type纹理数据的数据格式
+
+  |           格式            |                     描述                     |
+  | :-----------------------: | :------------------------------------------: |
+  |     gl.UNSIGNED_BYTE      |      无符号整形，每个颜色分量占据1字节       |
+  |  gl.UNSIGNED_SHORT_5_6_5  |       RGB：每个分量分别占据5、6、5比特       |
+  | gl.UNSIGNED_SHORT_4_4_4_4 |      RGBA：每个分量分别占据4,4,4,4比特       |
+  | gl.UNSIGNED_SHORT_5_5_5_1 | RGBA：RGB每个分量各占据5比特，A分量占据1比特 |
+
+- uniform1i(u_Sampler, 0)
+
+  将0号纹理传递给着色器中的取样器变量。
+
+- 
+
 ### webgl中的坐标系
 
 webgl是一个三维的坐标系，x轴是横轴，正方向向右，y轴为竖轴，正方向向上，z轴为垂直于屏幕的，正方向向外。原点在canvas画布的中心，并且画布的大小是从-1到1.
@@ -355,6 +442,11 @@ $$
   4. 准备待加载的纹理图像，令浏览器读取它。
   5. 监听纹理图像的加载事件，一旦加载完成，就在WebGL系统中使用纹理。
 
+专用于纹理的数据类型
+
+- sampler2D  绑定到gl.TEXTURE_2D上的纹理数据类型
+- samplerCube  绑定到gl.TEXTURE_CUBE_MAP上的纹理数据类型
+
 ### GLSL ES语言
 
 - vec4
@@ -386,3 +478,10 @@ $$
   - gl_FragCoord: vec4
   
     内置变量，第1个和第2个分量表示片元在canvas坐标系统（窗口坐标系统，2维坐标系统）中的坐标值。
+  
+  - texture2D(sampler2D sampler, vec2 coord)
+  
+    从sampler指定的纹理上获取coord指定的纹理坐标处的像素颜色。
+  
+    - sampler 指定纹理单元编号
+    - coord  指定纹理坐标
