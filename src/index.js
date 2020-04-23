@@ -1,5 +1,6 @@
 import * as glMatrix from 'gl-matrix';
 import personImage from './resource/person.jpg';
+import image1 from './resource/1.jpg';
 
 // 从字符串中加载着色器程序
 const loadShader = (gl, type, source) => {
@@ -163,7 +164,7 @@ const initTextures = (gl, n) => {
         loadTexture(gl, n, texture, u_sampler, image);
     };
 
-    image.src = personImage;
+    image.src = image1;
 
     return true;
 };
@@ -216,28 +217,28 @@ window.onload = () => {
     // 设置顶点着色器
     const VSHADER_SOURCE = `
         attribute vec4 a_Position;  // 用于从外部传输变量
-        attribute float a_PointSize;
-        attribute vec4 a_color;
+        // attribute float a_PointSize;
+        // attribute vec4 a_color;
         attribute vec2 a_textCoord;
         // uniform mat4 u_ModalMatrix;
-        varying vec4 v_color;
+        // varying vec4 v_color;
         varying vec2 v_textCoord;
         void main() { // 不可以指定参数
             gl_Position = a_Position; // 设置坐标位置,内置的变量
-            gl_PointSize = a_PointSize;  // 设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
+            // gl_PointSize = a_PointSize;  // 设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
             // gl_Position = u_ModalMatrix * a_Position;
-            v_color = a_color;
+            // v_color = a_color;
             v_textCoord = a_textCoord;
         }
     `;
     // 片段着色器
     const FSHADER_SOURCE = `
         precision mediump float;
-        varying vec4 v_color;
+        // varying vec4 v_color;
         varying vec2 v_textCoord;
         uniform sampler2D u_sampler;
-        uniform float u_width;
-        uniform float u_height;
+        // uniform float u_width;
+        // uniform float u_height;
         void main() {
             // gl_FragColor = vec4(gl_FragCoord.x / 800.0, 0.0, gl_FragCoord.y / 800.0, 1.0); // 设置颜色,内置的变量
             gl_FragColor = texture2D(u_sampler, v_textCoord);
