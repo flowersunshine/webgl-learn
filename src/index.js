@@ -1,6 +1,7 @@
 import * as glMatrix from 'gl-matrix';
 import personImage from './resource/person.jpg';
 import image1 from './resource/1.jpg';
+import './cuon-matrix';
 
 // 从字符串中加载着色器程序
 const loadShader = (gl, type, source) => {
@@ -273,4 +274,6 @@ window.onload = () => {
     // const n = initVertexBuffers(gl);
 
     // draw(gl, n);
+
+    console.log(Matrix4);
 };
