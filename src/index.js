@@ -1,7 +1,6 @@
 import * as glMatrix from 'gl-matrix';
-import personImage from './resource/person.jpg';
-import image1 from './resource/1.jpg';
 import './cuon-matrix';
+import sky_clound from './resource/sky_cloud.jpg';
 
 // 从字符串中加载着色器程序
 const loadShader = (gl, type, source) => {
@@ -165,7 +164,7 @@ const initTextures = (gl, n) => {
         loadTexture(gl, n, texture, u_sampler, image);
     };
 
-    image.src = image1;
+    image.src = sky_clound;
 
     return true;
 };
