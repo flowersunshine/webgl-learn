@@ -1,5 +1,5 @@
 import * as glMatrix from 'gl-matrix';
-import './cuon-matrix';
+import {Matrix4} from './cuon-matrix';
 import sky_clound from './resource/sky_cloud.jpg';
 
 // 从字符串中加载着色器程序
