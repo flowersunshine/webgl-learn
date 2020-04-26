@@ -1,7 +1,9 @@
 import * as glMatrix from 'gl-matrix';
 import {Matrix4} from './cuon-matrix';
 import sky_clound from './resource/sky_cloud.jpg';
-
+import {
+    Matrix4
+} from './cuon-matrix';
 // 从字符串中加载着色器程序
 const loadShader = (gl, type, source) => {
     // Create shader object
@@ -86,7 +88,7 @@ const click = (e, gl, canvas, a_Position, u_color, g_points, g_colors) => {
     const rect = e.target.getBoundingClientRect();
     x = (x - rect.left - canvas.width / 2) / (canvas.width / 2);
     y = -(y - rect.top - canvas.height / 2) / (canvas.height / 2);
-    g_points.push([x,y]);
+    g_points.push([x, y]);
     g_colors.push([Math.abs(x), Math.abs(y), Math.abs(Math.random())]);
     gl.clear(gl.COLOR_BUFFER_BIT);
     for (let index = 0; index < g_points.length; index++) {
@@ -113,15 +115,43 @@ const createZMatrix = a => {
 let radius = 0; // 旋转角度
 // 用缓存设置顶点位置
 const initVertexBuffers = gl => {
+    // const vertices = new Float32Array([
+    //     // 顶点坐标，纹理坐标
+    //     -0.5, 0.5, 0.0, 1.0,
+    //     -0.5, -0.5, 0.0, 0.0,
+    //     0.5, 0.5, 1.0, 1.0,
+    //     0.5, -0.5, 1.0, 0.0
+    // ]);
+    // const vertices = new Float32Array([
+    //     // 顶点坐标和颜色，三维的了
+    //     0.0, 0.5, -0.4, 0.4, 1.0, 0.4, // 绿色三角形在最后面
+    //     -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
+    //     0.5, -0.5, -0.4, 1.0, 0.4, 0.4,
+
+    //     0.5, 0.4, -0.2, 1.0, 0.4, 0.4, // 黄色三角形在中间
+    //     -0.5, 0.4, -0.2, 1.0, 1.0, 0.4,
+    //     0.0, -0.6, -0.2, 1.0, 1.0, 0.4,
+
+    //     0.0, 0.5, 0.0, 0.4, 0.4, 1.0, // 蓝色三角形在最前面
+    //     -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
+    //     0.5, -0.5, 0.0, 1.0, 0.4, 0.4
+    // ]);
     const vertices = new Float32Array([
-        // 顶点坐标，纹理坐标
-        -0.5, 0.5, 0.0, 1.0,
-        -0.5, -0.5, 0.0, 0.0,
-        0.5, 0.5, 1.0, 1.0,
-        0.5, -0.5, 1.0, 0.0
+        // Three triangles on the right side
+        0.0, 1.0, -4.0, 0.4, 1.0, 0.4, // The back green one
+        -0.5, -1.0, -4.0, 0.4, 1.0, 0.4,
+        0.5, -1.0, -4.0, 1.0, 0.4, 0.4,
+
+        0.0, 1.0, -2.0, 1.0, 1.0, 0.4, // The middle yellow one
+        -0.5, -1.0, -2.0, 1.0, 1.0, 0.4,
+        0.5, -1.0, -2.0, 1.0, 0.4, 0.4,
+
+        0.0, 1.0, 0.0, 0.4, 0.4, 1.0, // The front blue one 
+        -0.5, -1.0, 0.0, 0.4, 0.4, 1.0,
+        0.5, -1.0, 0.0, 1.0, 0.4, 0.4,
     ]);
     // 点的个数
-    const n = vertices.length / 4;
+    const n = vertices.length / 6;
     // 创建缓冲区对象
     const vertexBuffer = gl.createBuffer();
     // 将缓冲区对象绑定到目标
@@ -129,27 +159,22 @@ const initVertexBuffers = gl => {
     // 向缓冲区对象中写入数据
     gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
     const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-    const a_textCoord = gl.getAttribLocation(gl.program, 'a_textCoord');
-    // const u_Translate = gl.getUniformLocation(gl.program, 'u_Translate');
-    // const u_SinA = gl.getUniformLocation(gl.program, 'u_SinA');
-    // const u_CosA = gl.getUniformLocation(gl.program, 'u_CosA');
-    // gl.uniform4f(u_Translate, 0.3, 0.3, 0.0, 0.0);
-    
+    // const a_textCoord = gl.getAttribLocation(gl.program, 'a_textCoord');
+
     const FSIZE = vertices.BYTES_PER_ELEMENT;
     // 将缓冲区对象分配给a_Position变量
-    gl.vertexAttribPointer(a_Position, 2, gl.FLOAT, false, FSIZE * 4, 0);
-    // gl.uniform1f(u_CosA, Math.cos(Math.PI / 4));
-    // gl.uniform1f(u_SinA, Math.sin(Math.PI / 4));
+    gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, FSIZE * 6, 0);
+
     // 连接a_Position变量与分配给它的缓冲区对象.
     gl.enableVertexAttribArray(a_Position);
 
     // const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
-    gl.vertexAttribPointer(a_textCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
-    gl.enableVertexAttribArray(a_textCoord);
+    // gl.vertexAttribPointer(a_textCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
+    // gl.enableVertexAttribArray(a_textCoord);
 
-    // const a_color = gl.getAttribLocation(gl.program, 'a_color');
-    // gl.vertexAttribPointer(a_color, 4, gl.FLOAT, false, FSIZE * 7, FSIZE * 3);
-    // gl.enableVertexAttribArray(a_color);
+    const a_color = gl.getAttribLocation(gl.program, 'a_color');
+    gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, FSIZE * 6, FSIZE * 3);
+    gl.enableVertexAttribArray(a_color);
     return n;
 };
 
@@ -191,24 +216,155 @@ const loadTexture = (gl, n, texture, u_sampler, image) => {
 };
 
 // 绘制图形
-const draw = (gl, n) => {
-    
-    const u_ModalMatrix = gl.getUniformLocation(gl.program, 'u_ModalMatrix');
-    // 创建变换矩阵，先旋转，再平移 
-    const mat4Rotate = glMatrix.mat4.create();
-    glMatrix.mat4.fromRotation(mat4Rotate, (radius / 180) % 2 * Math.PI, glMatrix.vec3.fromValues(0, 0, 1));
+// const draw = (gl, n) => {
 
-    // const mat4Translate = glMatrix.mat4.create();
-    // glMatrix.mat4.fromTranslation(mat4Translate, glMatrix.vec3.fromValues(0.3, 0.3, 0));
-    // glMatrix.mat4.multiply(mat4Rotate, mat4Translate, mat4Rotate);
-    // gl.uniformMatrix4fv(u_ZFormMatrix, false, createZMatrix(Math.PI / 4));
-    gl.uniformMatrix4fv(u_ModalMatrix, false, mat4Rotate);
+//     const u_ModalMatrix = gl.getUniformLocation(gl.program, 'u_ModalMatrix');
+//     // 创建变换矩阵，先旋转，再平移 
+//     const mat4Rotate = glMatrix.mat4.create();
+//     glMatrix.mat4.fromRotation(mat4Rotate, (radius / 180) % 2 * Math.PI, glMatrix.vec3.fromValues(0, 0, 1));
+
+//     // const mat4Translate = glMatrix.mat4.create();
+//     // glMatrix.mat4.fromTranslation(mat4Translate, glMatrix.vec3.fromValues(0.3, 0.3, 0));
+//     // glMatrix.mat4.multiply(mat4Rotate, mat4Translate, mat4Rotate);
+//     // gl.uniformMatrix4fv(u_ZFormMatrix, false, createZMatrix(Math.PI / 4));
+//     gl.uniformMatrix4fv(u_ModalMatrix, false, mat4Rotate);
+//     gl.clear(gl.COLOR_BUFFER_BIT);
+//     gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
+//     radius += 1;
+//     requestAnimationFrame(() =>{
+//         draw(gl, n);
+//     });
+// };
+
+const draw = (gl, n, u_ProjMatrix, projMatrix, u_ViewModalMatrix, modalMatrix, nf) => {
+    // 设置视点和视线（正射投影矩阵）
+    projMatrix.setOrtho(-0.5, 0.5, -1.0, 1.0, 0.0, 2.0);
+
+    modalMatrix.setLookAt(0, 0, 5, 0, 0, -100, 0, 1, 0);
+    // 将视图矩阵传递给u_ViewMatrix变量
+    gl.uniformMatrix4fv(u_ProjMatrix, false, projMatrix.elements);
+    gl.uniformMatrix4fv(u_ViewModalMatrix, false, modalMatrix.elements);
+
     gl.clear(gl.COLOR_BUFFER_BIT);
-    gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
-    radius += 1;
-    requestAnimationFrame(() =>{
-        draw(gl, n);
-    });
+
+    // nf.innerHTML = `near: ${g_near}, far: ${g_far}`;
+    gl.drawArrays(gl.TRIANGLES, 0, n);
+};
+
+// 视点
+let g_eyeX = 0.20;
+let g_eyeY = 0.25;
+let g_eyeZ = 0.25;
+const keydown = (ev, gl, n, u_ProjMatrix, projMatrix, u_ViewModalMatrix, modalMatrix, nf) => {
+    if (ev.keyCode == 39) { // 按下右键
+        g_eyeX += 0.01;
+    } else if (ev.keyCode == 37) { // 按下左键
+        g_eyeX -= 0.01;
+    } else if (ev.keyCode == 38) { // 按下上键
+        g_eyeY += 0.01;
+    } else if (ev.keyCode == 40) { // 按下下键
+        g_eyeY -= 0.01;
+    } else {
+        return;
+    }
+    draw(gl, n, u_ProjMatrix, projMatrix, u_ViewModalMatrix, modalMatrix, nf);
+};
+
+// 视点与近、远裁剪面的距离
+// let g_near = 0.0;
+// let g_far = 0.5;
+// const keydown = (ev, gl, n, u_ProjMatrix, projMatrix, u_ViewModalMatrix, modalMatrix, nf) => {
+//     if (ev.keyCode == 39) {  // 按下右键
+//         g_near += 0.01;
+//     }
+//     else if (ev.keyCode == 37) { // 按下左键
+//         g_near -= 0.01;
+//     }
+//     else if (ev.keyCode == 38) { // 按下上键
+//         g_far += 0.01;
+//     }
+//     else if (ev.keyCode == 40) { // 按下下键
+//         g_far -= 0.01;
+//     }
+//     else {
+//         return;
+//     }
+//     draw(gl, n ,u_ProjMatrix, projMatrix, u_ViewModalMatrix, modalMatrix, nf);
+// };
+
+// // 带观察者的
+// const main = gl => {
+//     const nf = document.querySelector('.near-far');
+
+//     // 设置顶点坐标和颜色（蓝色三角形在最前面）
+//     const n = initVertexBuffers(gl);
+
+//     // const u_ViewModalMatrix = gl.getUniformLocation(gl.program, 'u_ViewModalMatrix');
+
+//     // 设置视点
+//     const viewMatrix = new Matrix4();
+
+//     document.onkeydown = ev => {
+//         keydown(ev, gl, n, u_ViewModalMatrix, viewMatrix);
+//     };
+
+//     viewMatrix.setLookAt(0.20, 0.25, 0.25, 0, 0, 0, 0, 1, 0);
+
+//     // 设置旋转矩阵
+//     // const modalMatrix = new Matrix4();
+//     // modalMatrix.setRotate(45, 0, 0, 1);
+//     // const viewModalMatrix = viewMatrix.multiply(modalMatrix);
+
+//     // 设置视图模型矩阵
+//     gl.uniformMatrix4fv(u_ViewModalMatrix, false, viewMatrix.elements);
+
+//     // 绘制三角形
+//     gl.drawArrays(gl.TRIANGLES, 0, n);
+// };
+
+// 带可视空间的
+const main = gl => {
+    const nf = document.querySelector('.near-far');
+
+    // 设置顶点坐标和颜色（蓝色三角形在最前面）
+    const n = initVertexBuffers(gl);
+
+    const u_ModalMatrix = gl.getUniformLocation(gl.program, 'u_ModalMatrix');
+    const u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
+    const u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
+
+    // 设置视点
+    const projMatrix = new Matrix4();
+    projMatrix.setPerspective(30.0, 1, 1.0, 100.0);
+    // document.onkeydown = ev => {
+    //     keydown(ev, gl, n, u_ProjMatrix, projMatrix, u_ViewModalMatrix, modalMatrix, nf);
+    // };
+
+    // projMatrix.setLookAt(0.20, 0.25, 0.25, 0, 0, 0, 0, 1, 0);
+    const viewMatrix = new Matrix4();
+    viewMatrix.setLookAt(0, 0, 5, 0, 0, -100, 0, 1, 0);
+    const modalMatrix = new Matrix4();
+    modalMatrix.setTranslate(0.75, 0, 0);
+    // const viewModalMatrix = viewMatrix.multiply(modalMatrix);
+
+    // // 设置视图模型矩阵
+    gl.uniformMatrix4fv(u_ProjMatrix, false, projMatrix.elements);
+    gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
+    gl.uniformMatrix4fv(u_ModalMatrix, false, modalMatrix.elements);
+
+
+    // // 绘制三角形
+    gl.drawArrays(gl.TRIANGLES, 0, n);
+    // draw(gl, n ,u_ProjMatrix, projMatrix, u_ViewModalMatrix, modalMatrix, nf);
+    modalMatrix.setTranslate(-0.75, 0, 0);
+    // const viewModalMatrix = viewMatrix.multiply(modalMatrix);
+
+    // // 设置视图模型矩阵
+    gl.uniformMatrix4fv(u_ModalMatrix, false, modalMatrix.elements);
+
+
+    // // 绘制三角形
+    gl.drawArrays(gl.TRIANGLES, 0, n);
 };
 
 window.onload = () => {
@@ -218,30 +374,33 @@ window.onload = () => {
     const VSHADER_SOURCE = `
         attribute vec4 a_Position;  // 用于从外部传输变量
         // attribute float a_PointSize;
-        // attribute vec4 a_color;
-        attribute vec2 a_textCoord;
-        // uniform mat4 u_ModalMatrix;
-        // varying vec4 v_color;
+        attribute vec4 a_color;
+        // attribute vec2 a_textCoord;
+        uniform mat4 u_ModalMatrix; // 变换矩阵
+        uniform mat4 u_ViewMatrix; // 视图矩阵
+        // uniform mat4 u_ViewModalMatrix; // 视图模型矩阵,不需要每次都重新计算上面两个矩阵的乘积
+        uniform mat4 u_ProjMatrix; // 可视矩阵
+        varying vec4 v_color;
         varying vec2 v_textCoord;
         void main() { // 不可以指定参数
-            gl_Position = a_Position; // 设置坐标位置,内置的变量
             // gl_PointSize = a_PointSize;  // 设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
-            // gl_Position = u_ModalMatrix * a_Position;
-            // v_color = a_color;
-            v_textCoord = a_textCoord;
+            gl_Position = u_ProjMatrix * u_ViewMatrix * u_ModalMatrix * a_Position;
+            v_color = a_color;
+            // v_textCoord = a_textCoord;
         }
     `;
     // 片段着色器
     const FSHADER_SOURCE = `
         precision mediump float;
-        // varying vec4 v_color;
-        varying vec2 v_textCoord;
-        uniform sampler2D u_sampler;
+        varying vec4 v_color;
+        // varying vec2 v_textCoord;
+        // uniform sampler2D u_sampler;
         // uniform float u_width;
         // uniform float u_height;
         void main() {
             // gl_FragColor = vec4(gl_FragCoord.x / 800.0, 0.0, gl_FragCoord.y / 800.0, 1.0); // 设置颜色,内置的变量
-            gl_FragColor = texture2D(u_sampler, v_textCoord);
+            // gl_FragColor = texture2D(u_sampler, v_textCoord);
+            gl_FragColor = v_color;
         }
     `;
     // 初始化着色器
@@ -249,7 +408,7 @@ window.onload = () => {
     // 获取attribute变量的存储位置
     // const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
     // const u_color = gl.getUniformLocation(gl.program, 'u_color');
-    // const u_Translate = gl.getUniformLocation(gl.program, 'u_Translate');
+
     // 将顶点位置传输给attitude变量
     // gl.vertexAttrib4f(a_Position, 0.5, -0.5, 0.0, 1.0);
     // gl.vertexAttrib1f(a_PointSize, 10.0);
@@ -263,8 +422,9 @@ window.onload = () => {
     //     click(e, gl, canvas, a_Position, u_color, g_points, g_colors);
     // };
     // 绘制一个点
-    const n = initVertexBuffers(gl);
-    initTextures(gl, n);
+    main(gl);
+    // const n = initVertexBuffers(gl);
+    // initTextures(gl, n);
     // gl.drawArrays(gl.TRIANGLES, 0, n);
 
     // const n = initVertexBuffers(gl);
