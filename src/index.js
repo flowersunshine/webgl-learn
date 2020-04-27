@@ -1,5 +1,4 @@
 import * as glMatrix from 'gl-matrix';
-import {Matrix4} from './cuon-matrix';
 import sky_clound from './resource/sky_cloud.jpg';
 import {
     Matrix4
@@ -81,6 +80,21 @@ const initShaders = (gl, vshader, fshader) => {
     return true;
 };
 
+// 初始化数组缓冲区
+const initArrayBuffer = (gl, data, num, type, attribute) => {
+    const buffer = gl.createBuffer();
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+
+    const a_attribute = gl.getAttribLocation(gl.program, attribute);
+
+    gl.vertexAttribPointer(a_attribute, num, type, false, 0, 0);
+    gl.enableVertexAttribArray(a_attribute);
+
+    return true;
+};
+
 // 处理canvas的点击事件
 const click = (e, gl, canvas, a_Position, u_color, g_points, g_colors) => {
     let x = e.clientX;
@@ -116,13 +130,6 @@ let radius = 0; // 旋转角度
 // 用缓存设置顶点位置
 const initVertexBuffers = gl => {
     // const vertices = new Float32Array([
-    //     // 顶点坐标，纹理坐标
-    //     -0.5, 0.5, 0.0, 1.0,
-    //     -0.5, -0.5, 0.0, 0.0,
-    //     0.5, 0.5, 1.0, 1.0,
-    //     0.5, -0.5, 1.0, 0.0
-    // ]);
-    // const vertices = new Float32Array([
     //     // 顶点坐标和颜色，三维的了
     //     0.0, 0.5, -0.4, 0.4, 1.0, 0.4, // 绿色三角形在最后面
     //     -0.5, -0.5, -0.4, 0.4, 1.0, 0.4,
@@ -136,46 +143,47 @@ const initVertexBuffers = gl => {
     //     -0.5, -0.5, 0.0, 0.4, 0.4, 1.0,
     //     0.5, -0.5, 0.0, 1.0, 0.4, 0.4
     // ]);
+
+    // 顶点集合
     const vertices = new Float32Array([
-        // Three triangles on the right side
-        0.0, 1.0, -4.0, 0.4, 1.0, 0.4, // The back green one
-        -0.5, -1.0, -4.0, 0.4, 1.0, 0.4,
-        0.5, -1.0, -4.0, 1.0, 0.4, 0.4,
+        1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, // v0-v1-v2-v3 front
+        1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, -1.0, // v0-v3-v4-v5 right
+        1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, 1.0, // v0-v5-v6-v1 up
+        -1.0, 1.0, 1.0, -1.0, 1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, // v1-v6-v7-v2 left
+        -1.0, -1.0, -1.0, 1.0, -1.0, -1.0, 1.0, -1.0, 1.0, -1.0, -1.0, 1.0, // v7-v4-v3-v2 down
+        1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0 // v4-v7-v6-v5 back
+    ]);
 
-        0.0, 1.0, -2.0, 1.0, 1.0, 0.4, // The middle yellow one
-        -0.5, -1.0, -2.0, 1.0, 1.0, 0.4,
-        0.5, -1.0, -2.0, 1.0, 0.4, 0.4,
+    const colors = new Float32Array([
+        0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, // v0-v1-v2-v3 front(blue)
+        0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, // v0-v3-v4-v5 right(green)
+        1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, // v0-v5-v6-v1 up(red)
+        1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, // v1-v6-v7-v2 left
+        1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, // v7-v4-v3-v2 down
+        0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0 // v4-v7-v6-v5 back
+    ]);
 
-        0.0, 1.0, 0.0, 0.4, 0.4, 1.0, // The front blue one 
-        -0.5, -1.0, 0.0, 0.4, 0.4, 1.0,
-        0.5, -1.0, 0.0, 1.0, 0.4, 0.4,
+    // 顶点索引
+    const indices = new Uint8Array([
+        0, 1, 2, 0, 2, 3, // front
+        4, 5, 6, 4, 6, 7, // right
+        8, 9, 10, 8, 10, 11, // up
+        12, 13, 14, 12, 14, 15, // left
+        16, 17, 18, 16, 18, 19, // down
+        20, 21, 22, 20, 22, 23 // back
     ]);
     // 点的个数
-    const n = vertices.length / 6;
+    // const n = vertices.length / 6;
     // 创建缓冲区对象
-    const vertexBuffer = gl.createBuffer();
+    const indexBuffer = gl.createBuffer();
     // 将缓冲区对象绑定到目标
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-    // 向缓冲区对象中写入数据
-    gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
-    const a_Position = gl.getAttribLocation(gl.program, 'a_Position');
-    // const a_textCoord = gl.getAttribLocation(gl.program, 'a_textCoord');
+    initArrayBuffer(gl, vertices, 3, gl.FLOAT, 'a_Position');
+    initArrayBuffer(gl, colors, 3, gl.FLOAT, 'a_color');
 
-    const FSIZE = vertices.BYTES_PER_ELEMENT;
-    // 将缓冲区对象分配给a_Position变量
-    gl.vertexAttribPointer(a_Position, 3, gl.FLOAT, false, FSIZE * 6, 0);
+    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+    gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
 
-    // 连接a_Position变量与分配给它的缓冲区对象.
-    gl.enableVertexAttribArray(a_Position);
-
-    // const a_PointSize = gl.getAttribLocation(gl.program, 'a_PointSize');
-    // gl.vertexAttribPointer(a_textCoord, 2, gl.FLOAT, false, FSIZE * 4, FSIZE * 2);
-    // gl.enableVertexAttribArray(a_textCoord);
-
-    const a_color = gl.getAttribLocation(gl.program, 'a_color');
-    gl.vertexAttribPointer(a_color, 3, gl.FLOAT, false, FSIZE * 6, FSIZE * 3);
-    gl.enableVertexAttribArray(a_color);
-    return n;
+    return indices.length;
 };
 
 // 初始化纹理信息
@@ -209,8 +217,6 @@ const loadTexture = (gl, n, texture, u_sampler, image) => {
 
     // 将0号纹理传递给着色器
     gl.uniform1i(u_sampler, 0);
-
-    console.log('画图了');
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, n);
 };
@@ -333,18 +339,18 @@ const main = gl => {
     const u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
     const u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
 
-    // 设置视点
+    // 设置透视矩阵
     const projMatrix = new Matrix4();
-    projMatrix.setPerspective(30.0, 1, 1.0, 100.0);
+    projMatrix.setPerspective(30.0, 1, 1, 100);
     // document.onkeydown = ev => {
     //     keydown(ev, gl, n, u_ProjMatrix, projMatrix, u_ViewModalMatrix, modalMatrix, nf);
     // };
 
     // projMatrix.setLookAt(0.20, 0.25, 0.25, 0, 0, 0, 0, 1, 0);
     const viewMatrix = new Matrix4();
-    viewMatrix.setLookAt(0, 0, 5, 0, 0, -100, 0, 1, 0);
+    viewMatrix.setLookAt(3, 3, 7, 0, 0, 0, 0, 1, 0);
     const modalMatrix = new Matrix4();
-    modalMatrix.setTranslate(0.75, 0, 0);
+    // modalMatrix.setTranslate(0.75, 0, 0);
     // const viewModalMatrix = viewMatrix.multiply(modalMatrix);
 
     // // 设置视图模型矩阵
@@ -354,17 +360,10 @@ const main = gl => {
 
 
     // // 绘制三角形
-    gl.drawArrays(gl.TRIANGLES, 0, n);
+    // gl.drawArrays(gl.TRIANGLES, 0, n);
+    // 绘制立方体
+    gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
     // draw(gl, n ,u_ProjMatrix, projMatrix, u_ViewModalMatrix, modalMatrix, nf);
-    modalMatrix.setTranslate(-0.75, 0, 0);
-    // const viewModalMatrix = viewMatrix.multiply(modalMatrix);
-
-    // // 设置视图模型矩阵
-    gl.uniformMatrix4fv(u_ModalMatrix, false, modalMatrix.elements);
-
-
-    // // 绘制三角形
-    gl.drawArrays(gl.TRIANGLES, 0, n);
 };
 
 window.onload = () => {
@@ -413,15 +412,12 @@ window.onload = () => {
     // gl.vertexAttrib4f(a_Position, 0.5, -0.5, 0.0, 1.0);
     // gl.vertexAttrib1f(a_PointSize, 10.0);
     // 设置清空的颜色值
+    gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.POLYGON_OFFSET_FILL);
+    gl.polygonOffset(1.0, 1.0);
     gl.clearColor(0.5, 0.5, 0.5, 1.0);
     // 清空指定的缓冲区，颜色缓冲区的内容会自动渲染在浏览器上
-    gl.clear(gl.COLOR_BUFFER_BIT);
-    // const g_points = [];
-    // const g_colors = [];
-    // canvas.onclick = e => {
-    //     click(e, gl, canvas, a_Position, u_color, g_points, g_colors);
-    // };
-    // 绘制一个点
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     main(gl);
     // const n = initVertexBuffers(gl);
     // initTextures(gl, n);
@@ -433,6 +429,4 @@ window.onload = () => {
     // const n = initVertexBuffers(gl);
 
     // draw(gl, n);
-
-    console.log(Matrix4);
 };
