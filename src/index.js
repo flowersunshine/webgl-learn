@@ -1,7 +1,8 @@
 import * as glMatrix from 'gl-matrix';
 import sky_clound from './resource/sky_cloud.jpg';
 import {
-    Matrix4
+    Matrix4,
+    Vector3
 } from './cuon-matrix';
 // 从字符串中加载着色器程序
 const loadShader = (gl, type, source) => {
@@ -154,13 +155,24 @@ const initVertexBuffers = gl => {
         1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0, 1.0, -1.0 // v4-v7-v6-v5 back
     ]);
 
+    // 顶点颜色
     const colors = new Float32Array([
-        0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, // v0-v1-v2-v3 front(blue)
-        0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, // v0-v3-v4-v5 right(green)
-        1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, 1.0, 0.4, 0.4, // v0-v5-v6-v1 up(red)
-        1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, // v1-v6-v7-v2 left
-        1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, // v7-v4-v3-v2 down
-        0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0, 0.4, 1.0, 1.0 // v4-v7-v6-v5 back
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, // v0-v1-v2-v3 front
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, // v0-v3-v4-v5 right
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, // v0-v5-v6-v1 up
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, // v1-v6-v7-v2 left
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, // v7-v4-v3-v2 down
+        1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0 // v4-v7-v6-v5 back
+    ]);
+
+    // 顶点法向量
+    const normals = new Float32Array([
+        0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, // v0-v1-v2-v3 front
+        1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, // v0-v3-v4-v5 right
+        0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, // v0-v5-v6-v1 up
+        -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, // v1-v6-v7-v2 left
+        0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, // v7-v4-v3-v2 down
+        0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0 // v4-v7-v6-v5 back
     ]);
 
     // 顶点索引
@@ -179,6 +191,7 @@ const initVertexBuffers = gl => {
     // 将缓冲区对象绑定到目标
     initArrayBuffer(gl, vertices, 3, gl.FLOAT, 'a_Position');
     initArrayBuffer(gl, colors, 3, gl.FLOAT, 'a_color');
+    initArrayBuffer(gl, normals, 3, gl.FLOAT, 'a_Normal');
 
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, indices, gl.STATIC_DRAW);
@@ -338,6 +351,15 @@ const main = gl => {
     const u_ModalMatrix = gl.getUniformLocation(gl.program, 'u_ModalMatrix');
     const u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
     const u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
+    const u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
+    const u_LightDirection = gl.getUniformLocation(gl.program, 'u_LightDirection');
+    const u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
+
+
+    gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
+    const lightDirection = new Vector3([0.5, 3.0, 4.0]);
+    lightDirection.normalize();
+    gl.uniform3fv(u_LightDirection, lightDirection.elements);
 
     // 设置透视矩阵
     const projMatrix = new Matrix4();
@@ -357,6 +379,7 @@ const main = gl => {
     gl.uniformMatrix4fv(u_ProjMatrix, false, projMatrix.elements);
     gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
     gl.uniformMatrix4fv(u_ModalMatrix, false, modalMatrix.elements);
+    gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
 
 
     // // 绘制三角形
@@ -374,17 +397,29 @@ window.onload = () => {
         attribute vec4 a_Position;  // 用于从外部传输变量
         // attribute float a_PointSize;
         attribute vec4 a_color;
+        attribute vec4 a_Normal; // 顶点的法向量
         // attribute vec2 a_textCoord;
         uniform mat4 u_ModalMatrix; // 变换矩阵
         uniform mat4 u_ViewMatrix; // 视图矩阵
         // uniform mat4 u_ViewModalMatrix; // 视图模型矩阵,不需要每次都重新计算上面两个矩阵的乘积
         uniform mat4 u_ProjMatrix; // 可视矩阵
+        uniform vec3 u_LightColor; // 平行光线颜色
+        uniform vec3 u_LightDirection; // 归一化后的光线方向
+        uniform vec3 u_AmbientLight; // 环境光颜色
         varying vec4 v_color;
-        varying vec2 v_textCoord;
+        // varying vec2 v_textCoord;
         void main() { // 不可以指定参数
             // gl_PointSize = a_PointSize;  // 设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
             gl_Position = u_ProjMatrix * u_ViewMatrix * u_ModalMatrix * a_Position;
-            v_color = a_color;
+            // 对顶点法向量进行归一化
+            vec3 normal = normalize(vec3(a_Normal));
+            // 计算光线方向和法向量的点积
+            float nDotL = max(dot(normal, u_LightDirection), 0.0);
+            // 计算漫反射光的颜色
+            vec3 diffuse = u_LightColor * vec3(a_color) * nDotL;
+            // 计算环境光产生的反射光颜色
+            vec3 ambient = u_AmbientLight * a_color.rgb;
+            v_color = vec4(diffuse + ambient, a_color.a);
             // v_textCoord = a_textCoord;
         }
     `;
