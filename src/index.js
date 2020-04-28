@@ -354,7 +354,7 @@ const main = gl => {
     const u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
     const u_LightDirection = gl.getUniformLocation(gl.program, 'u_LightDirection');
     const u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
-
+    const u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
 
     gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
     const lightDirection = new Vector3([0.5, 3.0, 4.0]);
@@ -372,14 +372,20 @@ const main = gl => {
     const viewMatrix = new Matrix4();
     viewMatrix.setLookAt(3, 3, 7, 0, 0, 0, 0, 1, 0);
     const modalMatrix = new Matrix4();
-    // modalMatrix.setTranslate(0.75, 0, 0);
+    modalMatrix.setTranslate(0, 0.5, 0);
+    modalMatrix.rotate(45, 0, 0, 1);
     // const viewModalMatrix = viewMatrix.multiply(modalMatrix);
 
+    const normalMatrix = new Matrix4();
+    normalMatrix.setInverseOf(modalMatrix);
+    normalMatrix.transpose();
     // // 设置视图模型矩阵
     gl.uniformMatrix4fv(u_ProjMatrix, false, projMatrix.elements);
     gl.uniformMatrix4fv(u_ViewMatrix, false, viewMatrix.elements);
     gl.uniformMatrix4fv(u_ModalMatrix, false, modalMatrix.elements);
-    gl.uniform3f(u_AmbientLight, 0.2, 0.2, 0.2);
+    gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+
+    gl.uniform3f(u_AmbientLight, 0.1, 0.1, 0.1);
 
 
     // // 绘制三角形
@@ -398,13 +404,15 @@ window.onload = () => {
         // attribute float a_PointSize;
         attribute vec4 a_color;
         attribute vec4 a_Normal; // 顶点的法向量
+        uniform mat4 u_NormalMatrix; // 变换矩阵的逆转置矩阵
         // attribute vec2 a_textCoord;
         uniform mat4 u_ModalMatrix; // 变换矩阵
         uniform mat4 u_ViewMatrix; // 视图矩阵
         // uniform mat4 u_ViewModalMatrix; // 视图模型矩阵,不需要每次都重新计算上面两个矩阵的乘积
         uniform mat4 u_ProjMatrix; // 可视矩阵
         uniform vec3 u_LightColor; // 平行光线颜色
-        uniform vec3 u_LightDirection; // 归一化后的光线方向
+        // uniform vec3 u_LightDirection; // 归一化后的光线方向
+        uniform vec4 u_LightPosition; // 
         uniform vec3 u_AmbientLight; // 环境光颜色
         varying vec4 v_color;
         // varying vec2 v_textCoord;
@@ -412,7 +420,7 @@ window.onload = () => {
             // gl_PointSize = a_PointSize;  // 设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
             gl_Position = u_ProjMatrix * u_ViewMatrix * u_ModalMatrix * a_Position;
             // 对顶点法向量进行归一化
-            vec3 normal = normalize(vec3(a_Normal));
+            vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));
             // 计算光线方向和法向量的点积
             float nDotL = max(dot(normal, u_LightDirection), 0.0);
             // 计算漫反射光的颜色
