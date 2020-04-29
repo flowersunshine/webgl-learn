@@ -352,14 +352,15 @@ const main = gl => {
     const u_ViewMatrix = gl.getUniformLocation(gl.program, 'u_ViewMatrix');
     const u_ProjMatrix = gl.getUniformLocation(gl.program, 'u_ProjMatrix');
     const u_LightColor = gl.getUniformLocation(gl.program, 'u_LightColor');
-    const u_LightDirection = gl.getUniformLocation(gl.program, 'u_LightDirection');
+    // const u_LightDirection = gl.getUniformLocation(gl.program, 'u_LightDirection');
     const u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
     const u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
+    const u_LightPosition = gl.getUniformLocation(gl.program, 'u_LightPosition');
 
     gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
     const lightDirection = new Vector3([0.5, 3.0, 4.0]);
     lightDirection.normalize();
-    gl.uniform3fv(u_LightDirection, lightDirection.elements);
+    // gl.uniform3fv(u_LightDirection, lightDirection.elements);
 
     // 设置透视矩阵
     const projMatrix = new Matrix4();
@@ -373,7 +374,7 @@ const main = gl => {
     viewMatrix.setLookAt(3, 3, 7, 0, 0, 0, 0, 1, 0);
     const modalMatrix = new Matrix4();
     modalMatrix.setTranslate(0, 0.5, 0);
-    modalMatrix.rotate(45, 0, 0, 1);
+    modalMatrix.rotate(0, 0, 0, 1);
     // const viewModalMatrix = viewMatrix.multiply(modalMatrix);
 
     const normalMatrix = new Matrix4();
@@ -387,6 +388,7 @@ const main = gl => {
 
     gl.uniform3f(u_AmbientLight, 0.1, 0.1, 0.1);
 
+    gl.uniform3f(u_LightPosition, 0.0, 3.0, 4.0);
 
     // // 绘制三角形
     // gl.drawArrays(gl.TRIANGLES, 0, n);
@@ -410,31 +412,31 @@ window.onload = () => {
         uniform mat4 u_ViewMatrix; // 视图矩阵
         // uniform mat4 u_ViewModalMatrix; // 视图模型矩阵,不需要每次都重新计算上面两个矩阵的乘积
         uniform mat4 u_ProjMatrix; // 可视矩阵
-        uniform vec3 u_LightColor; // 平行光线颜色
         // uniform vec3 u_LightDirection; // 归一化后的光线方向
-        uniform vec4 u_LightPosition; // 
-        uniform vec3 u_AmbientLight; // 环境光颜色
         varying vec4 v_color;
+        varying vec3 v_Normal;
+        varying vec3 v_Position;
         // varying vec2 v_textCoord;
         void main() { // 不可以指定参数
             // gl_PointSize = a_PointSize;  // 设置点的尺寸，内置的变量，当绘制单点时有用，绘制图形时没用
             gl_Position = u_ProjMatrix * u_ViewMatrix * u_ModalMatrix * a_Position;
+            // 计算顶点的变换后的坐标
+            v_Position = (u_ModalMatrix * a_Position).xyz;
             // 对顶点法向量进行归一化
-            vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));
-            // 计算光线方向和法向量的点积
-            float nDotL = max(dot(normal, u_LightDirection), 0.0);
-            // 计算漫反射光的颜色
-            vec3 diffuse = u_LightColor * vec3(a_color) * nDotL;
-            // 计算环境光产生的反射光颜色
-            vec3 ambient = u_AmbientLight * a_color.rgb;
-            v_color = vec4(diffuse + ambient, a_color.a);
+            v_Normal = normalize(vec3(u_NormalMatrix * a_Normal));
+            v_color = a_color;
             // v_textCoord = a_textCoord;
         }
     `;
     // 片段着色器
     const FSHADER_SOURCE = `
         precision mediump float;
+        uniform vec3 u_LightPosition; // 光源的位置
+        uniform vec3 u_LightColor; // 平行光线颜色
+        uniform vec3 u_AmbientLight; // 环境光颜色
         varying vec4 v_color;
+        varying vec3 v_Normal;
+        varying vec3 v_Position;
         // varying vec2 v_textCoord;
         // uniform sampler2D u_sampler;
         // uniform float u_width;
@@ -442,7 +444,16 @@ window.onload = () => {
         void main() {
             // gl_FragColor = vec4(gl_FragCoord.x / 800.0, 0.0, gl_FragCoord.y / 800.0, 1.0); // 设置颜色,内置的变量
             // gl_FragColor = texture2D(u_sampler, v_textCoord);
-            gl_FragColor = v_color;
+            // 对法线进行归一化，因为其内插之后长度不一定是1.0
+            vec3 normal = normalize(v_Normal);
+            vec3 lightDirection = normalize(u_LightPosition - v_Position);
+            // 计算光线方向和法向量的点积
+            float nDotL = max(dot(normal, lightDirection), 0.0);
+            // 计算漫反射光的颜色
+            vec3 diffuse = u_LightColor * vec3(v_color) * nDotL;
+            // 计算环境光产生的反射光颜色
+            vec3 ambient = u_AmbientLight * v_color.rgb;
+            gl_FragColor = vec4(diffuse + ambient, v_color.a);
         }
     `;
     // 初始化着色器
