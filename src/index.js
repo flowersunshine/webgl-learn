@@ -96,44 +96,102 @@ const initArrayBuffer = (gl, data, num, type, attribute) => {
     return true;
 };
 
+// 初始化缓冲区对象，但是不赋值给着色器
+const initArrayBufferForLaterUse = (gl, data, num, type) => {
+    const buffer = gl.createBuffer();
 
-let radius = 0; // 旋转角度
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    buffer.num = num;
+    buffer.type = type;
+    return buffer;
+};
+
+let baseBuffer = null; // base的缓冲区对象
+let arm1Buffer = null; // arm1的缓冲区对象
+let arm2Buffer = null; // arm2的缓冲区对象
+let palmBuffer = null; // palm的缓冲区对象
+let fingerBuffer = null; // finger的缓冲区对象
+let a_Position = null;
 // 用缓存设置顶点位置
 const initVertexBuffers = gl => {
-    var vertices = new Float32Array([
-        1.5, 10.0, 1.5, -1.5, 10.0, 1.5, -1.5,  0.0, 1.5,  1.5,  0.0, 1.5, // v0-v1-v2-v3 front
-        1.5, 10.0, 1.5,  1.5,  0.0, 1.5,  1.5,  0.0,-1.5,  1.5, 10.0,-1.5, // v0-v3-v4-v5 right
-        1.5, 10.0, 1.5,  1.5, 10.0,-1.5, -1.5, 10.0,-1.5, -1.5, 10.0, 1.5, // v0-v5-v6-v1 up
-       -1.5, 10.0, 1.5, -1.5, 10.0,-1.5, -1.5,  0.0,-1.5, -1.5,  0.0, 1.5, // v1-v6-v7-v2 left
-       -1.5,  0.0,-1.5,  1.5,  0.0,-1.5,  1.5,  0.0, 1.5, -1.5,  0.0, 1.5, // v7-v4-v3-v2 down
-        1.5,  0.0,-1.5, -1.5,  0.0,-1.5, -1.5, 10.0,-1.5,  1.5, 10.0,-1.5  // v4-v7-v6-v5 back
-      ]);
-    
-      // Normal
-      var normals = new Float32Array([
+    // Vertex coordinate (prepare coordinates of cuboids for all segments)
+    var vertices_base = new Float32Array([ // Base(10x2x10)
+        5.0, 2.0, 5.0, -5.0, 2.0, 5.0, -5.0, 0.0, 5.0, 5.0, 0.0, 5.0, // v0-v1-v2-v3 front
+        5.0, 2.0, 5.0, 5.0, 0.0, 5.0, 5.0, 0.0, -5.0, 5.0, 2.0, -5.0, // v0-v3-v4-v5 right
+        5.0, 2.0, 5.0, 5.0, 2.0, -5.0, -5.0, 2.0, -5.0, -5.0, 2.0, 5.0, // v0-v5-v6-v1 up
+        -5.0, 2.0, 5.0, -5.0, 2.0, -5.0, -5.0, 0.0, -5.0, -5.0, 0.0, 5.0, // v1-v6-v7-v2 left
+        -5.0, 0.0, -5.0, 5.0, 0.0, -5.0, 5.0, 0.0, 5.0, -5.0, 0.0, 5.0, // v7-v4-v3-v2 down
+        5.0, 0.0, -5.0, -5.0, 0.0, -5.0, -5.0, 2.0, -5.0, 5.0, 2.0, -5.0 // v4-v7-v6-v5 back
+    ]);
+
+    var vertices_arm1 = new Float32Array([ // Arm1(3x10x3)
+        1.5, 10.0, 1.5, -1.5, 10.0, 1.5, -1.5, 0.0, 1.5, 1.5, 0.0, 1.5, // v0-v1-v2-v3 front
+        1.5, 10.0, 1.5, 1.5, 0.0, 1.5, 1.5, 0.0, -1.5, 1.5, 10.0, -1.5, // v0-v3-v4-v5 right
+        1.5, 10.0, 1.5, 1.5, 10.0, -1.5, -1.5, 10.0, -1.5, -1.5, 10.0, 1.5, // v0-v5-v6-v1 up
+        -1.5, 10.0, 1.5, -1.5, 10.0, -1.5, -1.5, 0.0, -1.5, -1.5, 0.0, 1.5, // v1-v6-v7-v2 left
+        -1.5, 0.0, -1.5, 1.5, 0.0, -1.5, 1.5, 0.0, 1.5, -1.5, 0.0, 1.5, // v7-v4-v3-v2 down
+        1.5, 0.0, -1.5, -1.5, 0.0, -1.5, -1.5, 10.0, -1.5, 1.5, 10.0, -1.5 // v4-v7-v6-v5 back
+    ]);
+
+    var vertices_arm2 = new Float32Array([ // Arm2(4x10x4)
+        2.0, 10.0, 2.0, -2.0, 10.0, 2.0, -2.0, 0.0, 2.0, 2.0, 0.0, 2.0, // v0-v1-v2-v3 front
+        2.0, 10.0, 2.0, 2.0, 0.0, 2.0, 2.0, 0.0, -2.0, 2.0, 10.0, -2.0, // v0-v3-v4-v5 right
+        2.0, 10.0, 2.0, 2.0, 10.0, -2.0, -2.0, 10.0, -2.0, -2.0, 10.0, 2.0, // v0-v5-v6-v1 up
+        -2.0, 10.0, 2.0, -2.0, 10.0, -2.0, -2.0, 0.0, -2.0, -2.0, 0.0, 2.0, // v1-v6-v7-v2 left
+        -2.0, 0.0, -2.0, 2.0, 0.0, -2.0, 2.0, 0.0, 2.0, -2.0, 0.0, 2.0, // v7-v4-v3-v2 down
+        2.0, 0.0, -2.0, -2.0, 0.0, -2.0, -2.0, 10.0, -2.0, 2.0, 10.0, -2.0 // v4-v7-v6-v5 back
+    ]);
+
+    var vertices_palm = new Float32Array([ // Palm(2x2x6)
+        1.0, 2.0, 3.0, -1.0, 2.0, 3.0, -1.0, 0.0, 3.0, 1.0, 0.0, 3.0, // v0-v1-v2-v3 front
+        1.0, 2.0, 3.0, 1.0, 0.0, 3.0, 1.0, 0.0, -3.0, 1.0, 2.0, -3.0, // v0-v3-v4-v5 right
+        1.0, 2.0, 3.0, 1.0, 2.0, -3.0, -1.0, 2.0, -3.0, -1.0, 2.0, 3.0, // v0-v5-v6-v1 up
+        -1.0, 2.0, 3.0, -1.0, 2.0, -3.0, -1.0, 0.0, -3.0, -1.0, 0.0, 3.0, // v1-v6-v7-v2 left
+        -1.0, 0.0, -3.0, 1.0, 0.0, -3.0, 1.0, 0.0, 3.0, -1.0, 0.0, 3.0, // v7-v4-v3-v2 down
+        1.0, 0.0, -3.0, -1.0, 0.0, -3.0, -1.0, 2.0, -3.0, 1.0, 2.0, -3.0 // v4-v7-v6-v5 back
+    ]);
+
+    var vertices_finger = new Float32Array([ // Fingers(1x2x1)
+        0.5, 2.0, 0.5, -0.5, 2.0, 0.5, -0.5, 0.0, 0.5, 0.5, 0.0, 0.5, // v0-v1-v2-v3 front
+        0.5, 2.0, 0.5, 0.5, 0.0, 0.5, 0.5, 0.0, -0.5, 0.5, 2.0, -0.5, // v0-v3-v4-v5 right
+        0.5, 2.0, 0.5, 0.5, 2.0, -0.5, -0.5, 2.0, -0.5, -0.5, 2.0, 0.5, // v0-v5-v6-v1 up
+        -0.5, 2.0, 0.5, -0.5, 2.0, -0.5, -0.5, 0.0, -0.5, -0.5, 0.0, 0.5, // v1-v6-v7-v2 left
+        -0.5, 0.0, -0.5, 0.5, 0.0, -0.5, 0.5, 0.0, 0.5, -0.5, 0.0, 0.5, // v7-v4-v3-v2 down
+        0.5, 0.0, -0.5, -0.5, 0.0, -0.5, -0.5, 2.0, -0.5, 0.5, 2.0, -0.5 // v4-v7-v6-v5 back
+    ]);
+
+    var normals = new Float32Array([
         0.0, 0.0, 1.0,  0.0, 0.0, 1.0,  0.0, 0.0, 1.0,  0.0, 0.0, 1.0, // v0-v1-v2-v3 front
         1.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 0.0, 0.0,  1.0, 0.0, 0.0, // v0-v3-v4-v5 right
         0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0,  0.0, 1.0, 0.0, // v0-v5-v6-v1 up
        -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, -1.0, 0.0, 0.0, // v1-v6-v7-v2 left
         0.0,-1.0, 0.0,  0.0,-1.0, 0.0,  0.0,-1.0, 0.0,  0.0,-1.0, 0.0, // v7-v4-v3-v2 down
         0.0, 0.0,-1.0,  0.0, 0.0,-1.0,  0.0, 0.0,-1.0,  0.0, 0.0,-1.0  // v4-v7-v6-v5 back
-      ]);
-    
-      // Indices of the vertices
-      var indices = new Uint8Array([
-         0, 1, 2,   0, 2, 3,    // front
-         4, 5, 6,   4, 6, 7,    // right
-         8, 9,10,   8,10,11,    // up
-        12,13,14,  12,14,15,    // left
-        16,17,18,  16,18,19,    // down
-        20,21,22,  20,22,23     // back
-      ]);
+     ]);
+
+    // Indices of the vertices
+    var indices = new Uint8Array([
+        0, 1, 2, 0, 2, 3, // front
+        4, 5, 6, 4, 6, 7, // right
+        8, 9, 10, 8, 10, 11, // up
+        12, 13, 14, 12, 14, 15, // left
+        16, 17, 18, 16, 18, 19, // down
+        20, 21, 22, 20, 22, 23 // back
+    ]);
+
+    baseBuffer = initArrayBufferForLaterUse(gl, vertices_base, 3, gl.FLOAT);
+    arm1Buffer = initArrayBufferForLaterUse(gl, vertices_arm1, 3, gl.FLOAT);
+    arm2Buffer = initArrayBufferForLaterUse(gl, vertices_arm2, 3, gl.FLOAT);
+    palmBuffer = initArrayBufferForLaterUse(gl, vertices_palm, 3, gl.FLOAT);
+    fingerBuffer = initArrayBufferForLaterUse(gl, vertices_finger, 3, gl.FLOAT);
+
     // 点的个数
     // const n = vertices.length / 6;
     // 创建缓冲区对象
     const indexBuffer = gl.createBuffer();
     // 将缓冲区对象绑定到目标
-    initArrayBuffer(gl, vertices, 3, gl.FLOAT, 'a_Position');
+    // initArrayBuffer(gl, vertices, 3, gl.FLOAT, 'a_Position');
     // initArrayBuffer(gl, colors, 3, gl.FLOAT, 'a_color');
     initArrayBuffer(gl, normals, 3, gl.FLOAT, 'a_Normal');
 
@@ -180,7 +238,10 @@ const loadTexture = (gl, n, texture, u_sampler, image) => {
 
 let normalMatrix = new Matrix4();
 
-const drawBox = (gl, n, modalMatrix, u_ModalMatrix, u_NormalMatrix) => {
+const drawBox = (gl, n, width, height, depth, u_ModalMatrix, u_NormalMatrix) => {
+    pushMatrix(modalMatrix);
+    modalMatrix.scale(width, height, depth);
+
     normalMatrix.setInverseOf(modalMatrix);
     normalMatrix.transpose();
 
@@ -188,51 +249,124 @@ const drawBox = (gl, n, modalMatrix, u_ModalMatrix, u_NormalMatrix) => {
     gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
 
     gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
+    modalMatrix = popMatrix();
+};
+
+const drawSegment = (gl, n, buffer, a_Position, u_ModalMatrix, u_NormalMatrix) => {
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+
+    gl.vertexAttribPointer(a_Position, buffer.num, buffer.type, false, 0, 0);
+    gl.enableVertexAttribArray(a_Position);
+
+    normalMatrix.setInverseOf(modalMatrix);
+    normalMatrix.transpose();
+
+    gl.uniformMatrix4fv(u_ModalMatrix, false, modalMatrix.elements);
+    gl.uniformMatrix4fv(u_NormalMatrix, false, normalMatrix.elements);
+   
+
+    gl.drawElements(gl.TRIANGLES, n, gl.UNSIGNED_BYTE, 0);
+}
+const matrixStack = [];
+const pushMatrix = matrix => {
+    const newMatrix = new Matrix4(matrix);
+    matrixStack.push(newMatrix);
+};
+
+const popMatrix = () => {
+    return matrixStack.pop();
 };
 
 let modalMatrix = new Matrix4();
 
 const draw = (gl, n, u_ModalMatrix, u_NormalMatrix) => {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    // 绘制基底
+    let baseHeight = 2.0;
+    modalMatrix.setTranslate(0.0, -12.0, 0.0);
+    drawSegment(gl, n, baseBuffer, a_Position, u_ModalMatrix, u_NormalMatrix);
     // arm1的长度
     let arm1Length = 10.0; // arm1的长度
-    modalMatrix.setTranslate(0.0, -5.0, 0.0);
+    modalMatrix.translate(0.0, baseHeight, 0.0); // 移至基底
     modalMatrix.rotate(g_arm1Angle, 0.0, 1.0, 0.0); // 绕着Y轴
-    drawBox(gl, n, modalMatrix, u_ModalMatrix, u_NormalMatrix);
+    drawSegment(gl, n, arm1Buffer, a_Position, u_ModalMatrix, u_NormalMatrix);
 
     // arm2的长度
     modalMatrix.translate(0.0, arm1Length, 0.0);
-    modalMatrix.rotate(g_arm2Angel, 0.0, 0.0, 1.0);
-    modalMatrix.scale(1.3, 1.0, 1.3);
-    drawBox(gl, n, modalMatrix, u_ModalMatrix, u_NormalMatrix);
+    modalMatrix.rotate(g_arm2Angle, 0.0, 0.0, 1.0);
+    // modalMatrix.scale(1.3, 1.0, 1.3);
+    drawSegment(gl, n, arm2Buffer, a_Position, u_ModalMatrix, u_NormalMatrix);
+
+    // 绘制手掌
+    let palmHeight = 2.0;
+    modalMatrix.translate(0.0, arm1Length, 0.0); // 移至基底
+    modalMatrix.rotate(g_palmAngle, 0.0, 1.0, 0.0); // 绕着Y轴
+    drawSegment(gl, n, palmBuffer, a_Position, u_ModalMatrix, u_NormalMatrix);
+
+
+    modalMatrix.translate(0.0, palmHeight, 0.0);
+
+    // 绘制手指1
+    pushMatrix(modalMatrix);
+    modalMatrix.translate(0.0, 0.0, 2.0);
+    modalMatrix.rotate(g_fingureAngle, 1.0, 0.0, 0.0);
+    drawSegment(gl, n, fingerBuffer, a_Position, u_ModalMatrix, u_NormalMatrix);
+    modalMatrix = popMatrix();
+
+    // 绘制手指2
+    modalMatrix.translate(0.0, 0.0, -2.0);
+    modalMatrix.rotate(-g_fingureAngle, 1.0, 0.0, 0.0);
+    drawSegment(gl, n, fingerBuffer, a_Position, u_ModalMatrix, u_NormalMatrix);
 };
 
 const ANGLE_STEP = 3.0; // 每次按键转动的角度
-let g_arm1Angle = 0.0; // arm1当前的角度
-let g_arm2Angel = 0.0; // arm2当前的角度
+let g_arm1Angle = 90.0; // arm1当前的角度
+let g_arm2Angle = 45.0; // arm2当前的角度
+let g_palmAngle = 0.0; // 手掌的角度
+let g_fingureAngle = 0.0; // 手指的角度
 
 const keydown = (ev, gl, n, u_ModalMatrix, u_NormalMatrix) => {
     switch (ev.keyCode) {
-        case 38: {// 上方向键 -> arm2绕Z轴正向转动
-            if (g_arm2Angel < 135.0) {
-                g_arm2Angel += ANGLE_STEP;
+        case 38: { // 上方向键 -> arm2绕Z轴正向转动
+            if (g_arm2Angle < 135.0) {
+                g_arm2Angle += ANGLE_STEP;
             }
             break;
         }
-        case 40: {// 下方向键 -> arm2绕Z轴负方向转动
-            if (g_arm2Angel > -135.0) {
-                g_arm2Angel -= ANGLE_STEP;
+        case 40: { // 下方向键 -> arm2绕Z轴负方向转动
+            if (g_arm2Angle > -135.0) {
+                g_arm2Angle -= ANGLE_STEP;
             }
             break;
         }
         case 37: {
             // 左方向键 -> arm1绕Y轴负方向转动
-            g_arm1Angle = (g_arm1Angle - ANGLE_STEP) % 360; 
+            g_arm1Angle = (g_arm1Angle - ANGLE_STEP) % 360;
             break;
         }
         case 39: {
             // 右方向键 -> arm1绕Y轴正方向转动
-            g_arm1Angle = (g_arm1Angle + ANGLE_STEP) % 360; 
+            g_arm1Angle = (g_arm1Angle + ANGLE_STEP) % 360;
+            break;
+        }
+        case 90: { // Z键 -> 使手掌正向转动
+            g_palmAngle = (g_palmAngle + ANGLE_STEP) % 360;
+            break;
+        }
+        case 88: { // X键 -> 使手掌负向转动
+            g_palmAngle = (g_palmAngle - ANGLE_STEP) % 360;
+            break;
+        }
+        case 86: { // V键 -> 使手指正向转动
+            if (g_fingureAngle < 60.0) {
+                g_fingureAngle = (g_fingureAngle + ANGLE_STEP) % 360;
+            }
+            break;
+        }
+        case 67: { // C键 -> 使手指负向转动 
+            if (g_fingureAngle > -60) {
+                g_fingureAngle = (g_fingureAngle - ANGLE_STEP) % 360;
+            }
             break;
         }
         default:
@@ -256,6 +390,7 @@ const main = gl => {
     const u_AmbientLight = gl.getUniformLocation(gl.program, 'u_AmbientLight');
     const u_NormalMatrix = gl.getUniformLocation(gl.program, 'u_NormalMatrix');
     const u_LightPosition = gl.getUniformLocation(gl.program, 'u_LightPosition');
+    a_Position = gl.getAttribLocation(gl.program, 'a_Position');
 
     gl.uniform3f(u_LightColor, 1.0, 1.0, 1.0);
     // const lightDirection = new Vector3([0.5, 3.0, 4.0]);
@@ -271,7 +406,7 @@ const main = gl => {
 
     // projMatrix.setLookAt(0.20, 0.25, 0.25, 0, 0, 0, 0, 1, 0);
     const viewMatrix = new Matrix4();
-    viewMatrix.setLookAt(0, 0, 30, 0, 0, 0, 0, 1, 0);
+    viewMatrix.setLookAt(20, 10, 30, 0, 0, 0, 0, 1, 0);
     // const modalMatrix = new Matrix4();
     // modalMatrix.setTranslate(0, 0.5, 0);
     // modalMatrix.rotate(0, 0, 0, 1);
@@ -293,7 +428,7 @@ const main = gl => {
 
     gl.uniform3f(u_AmbientLight, 0.1, 0.1, 0.1);
 
-    gl.uniform3f(u_LightPosition, 0.0, 3.0, 4.0);
+    gl.uniform3f(u_LightPosition, 20.0, 30.0, 40.0);
 
     // // 绘制三角形
     // gl.drawArrays(gl.TRIANGLES, 0, n);

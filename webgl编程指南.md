@@ -395,6 +395,82 @@
 
     指定索引数组中开始绘制的位置，以字节为单位
 
+- createShader(type)
+
+  创建由type指定的着色器对象。
+
+  type  指定创建着色器的类型，gl.VERTEX_SHADER表示顶点着色器，gl.FRAGMENT_SHADER表示片元着色器。
+
+  返回创建的着色器。
+
+- deleteShader(shader)
+
+  删除指定的shader着色器对象。
+
+- shaderSource(shader, source)
+
+  将source指定的字符串形式的代码传入shader指定的着色器。如果之前已经向shader传入过代码了，旧的代码会被替换掉。
+
+  shader  指定需要传入代码的着色器对象
+  
+  source  指定字符串形式的代码
+
+- compileShader(shader)
+
+  编译shader指定的着色器中的源代码。
+
+  shader   待编译的着色器
+
+- getShaderParamter(shader, pname)
+
+  获取shader指定着色器中，pname指定的参数信息。
+
+  shader   指定待获取参数的着色器
+
+  pname   指定待获取参数的类型，可以是gl.SHADER_TYPE,gl.DELETE_STATUS,gl.COMPILE_STATUS
+
+- getShaderInfoLog(shader)
+
+  获取shader指定的着色器的信息日志。
+
+  shader   指定待获取信息日志的着色器
+
+- createProgram()
+
+  创建程序对象
+
+- deleteProgram(program)
+
+  删除program指定的程序，如果该程序对象正在被使用，则不立即删除，而是等它不再被使用后再删除。
+
+- attachShader(program, shader)
+
+  将shader指定的着色器对象分配给program指定的程序对象。
+
+- detachShader(program, shader)
+
+  取消shader指定的着色器对象对program指定的程序对象的分配。
+
+- linkProgram(program)
+
+  连接program指定的程序对象中的着色器。
+
+- getProgramParameter(program, pname)
+
+  获取program指定的程序对象中pname指定的参数信息。返回值随着pname的不同而不同。
+
+  program   指定程序对象
+
+  pname   指定待获取参数的类型，可以是gl.DELETE_STATUS, gl.LINK_STATUS, gl.VALIDATE_STATUS, gl.ATTACHED_SHADER, gl.ACTIVE_ATTRIBUTES或gl.ACTIVE_UNIFORMS
+
+- getProgramInfoLog(program)
+
+  获取program指定的程序对象的信息日志
+
+- useProgram(program)
+
+  告知WebGl系统绘制时使用program指定的程序对象。
+
 ### webgl中的坐标系
 
 webgl是一个三维的坐标系，x轴是横轴，正方向向右，y轴为竖轴，正方向向上，z轴为垂直于屏幕的，正方向向外。原点在canvas画布的中心，并且画布的大小是从-1到1.
@@ -722,7 +798,7 @@ float floatArray[4];  // 声明含有4个浮点数元素的数组
     - sampler 指定纹理单元编号
     - coord  指定纹理坐标
 
-### Matrix4矩阵库关键函数说明
+### Matrix4矩阵库以及工具关键函数说明
 
 - setLookAt(eyeX, eyeY, eyeZ, atX, atY, atZ, upX, upY, upZ)
 
@@ -751,3 +827,20 @@ float floatArray[4];  // 声明含有4个浮点数元素的数组
 - transpose()
 
   对自身进行转置操作，并将自身设为转置后的结果；
+
+- initShaders()
+
+  编译GLSL ES代码，创建和初始化着色器供WebGL使用。具体步骤如下：
+
+  1. 创建着色器对象(gl.createShader())
+  2. 向着色器对象中填充着色器程序的源代码（gl.shaderSource()）
+  3. 编译着色器(gl.compileShader())
+  4. 创建程序对象(gl.createProgram())
+  5. 为程序对象分配着色器(gl.attachShader())
+  6. 连接程序对象(gl.linkProgram())
+  7. 使用程序对象(gl.useProgram())
+
+  这里出现了两种对象，一种是着色器对象，一种是程序对象。
+
+  - 着色器对象：着色器对象管理一个顶点着色器或一个片元着色器，每一个着色器都有一个着色器对象。
+  - 程序对象：程序对象是管理着色器对象的容器。WebGL中，一个程序对象必须包含一个顶点着色器和一个片元着色器。
