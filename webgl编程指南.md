@@ -471,6 +471,20 @@
 
   告知WebGl系统绘制时使用program指定的程序对象。
 
+- readPixels(x, y, width, height, format, type, pixels)
+
+  从颜色缓冲区中读取由x, y, width, height参数确定的矩形块中的所有像素值，并保存在pixels指定的数组中。
+
+  x，y   指定颜色缓冲区中矩形块左上角的坐标，同时也是读取的第1个像素的坐标。
+
+  width, height   指定矩形块的宽度和高度，以像素为单位。
+
+  format   指定像素值的颜色格式，必须为gl.RGBA
+
+  type   指定像素值的数据格式，必须为gl.UNSIGNED_BYTE
+
+  pixels   指定用来接收像素值数据的Uint8Array类型化数组
+
 ### webgl中的坐标系
 
 webgl是一个三维的坐标系，x轴是横轴，正方向向右，y轴为竖轴，正方向向上，z轴为垂直于屏幕的，正方向向外。原点在canvas画布的中心，并且画布的大小是从-1到1.
