@@ -659,6 +659,15 @@ $$
 
 在顶点着色器中计算顶点与视点的距离，会造成较大的开销，也会回影响性能。我们可以使用另外一种方法来近似估算出这个距离，那就是使用顶点经过模型视图投影矩阵变换后的坐标的w分量。
 
+##### α混合
+
+使用程序来实现半透明效果，实现这种效果需要用到颜色的α分量。该功能被称为α混合或混合。WebGL已经内置了该功能，只需要开启即可。
+
+开启α混合的步骤：
+
+1. 开启混合功能  gl.enable(gl.BLEND);
+2. 指定混合函数  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
 ### JavaScript与着色器之间的数据传输
 
 - attribute
@@ -819,12 +828,20 @@ float floatArray[4];  // 声明含有4个浮点数元素的数组
   
     内置变量，第1个和第2个分量表示片元在canvas坐标系统（窗口坐标系统，2维坐标系统）中的坐标值。
   
+  - gl_PointCoord:  vec2
+  
+    片元在被绘制的点内的坐标(从0.0到1.0)
+  
   - texture2D(sampler2D sampler, vec2 coord)
   
     从sampler指定的纹理上获取coord指定的纹理坐标处的像素颜色。
   
     - sampler 指定纹理单元编号
     - coord  指定纹理坐标
+  
+  - discard
+  
+    WebGL会自动地舍弃该片元，直接处理下一个片元。
 
 ### Matrix4矩阵库以及工具关键函数说明
 
