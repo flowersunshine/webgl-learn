@@ -485,6 +485,36 @@
 
   pixels   指定用来接收像素值数据的Uint8Array类型化数组
 
+- blendFunc(src_factor, dst_factor)
+
+  通过参数src_factor和dst_factor指定进行混合操作的函数，混合后的颜色如下计算：
+
+  <混合后颜色>=<愿颜色>\*src_factor + <目标颜色>\*dst_factor
+
+  src_factor   指定源颜色在混合后颜色重的权重因子
+
+  dst_factor 指定目标颜色在混合后颜色中的权重因子
+
+  | 常量                   | R分量的系数 | G分量的系数 | B分量的系数 |
+  | ---------------------- | ----------- | ----------- | ----------- |
+  | gl.ZERO                | 0.0         | 0.0         | 0.0         |
+  | gl.ONE                 | 1.0         | 1.0         | 1.0         |
+  | gl.SRC_COLOR           | Rs          | Gs          | Bs          |
+  | gl.ONE_MINUS_SRC_COLOR | (1-Rs)      | (1-Gs)      | (1-Bs)      |
+  | gl.DST_COLOR           | Rd          | Gd          | Bd          |
+  | gl.ONE_MINUS_DST_COLOR | (1-Rd)      | (1-Gd)      | (1-Bd)      |
+  | gl.SRC_ALPHA           | As          | As          | As          |
+  | gl.ONE_MINUS_SRC_ALPHA | (1-As)      | (1-As)      | (1-As)      |
+  | gl.DST_ALPHA           | Ad          | Ad          | Ad          |
+  | gl.ONE_MINUS_DST_ALPHA | (1-Ad)      | (1-Ad)      | (1-Ad)      |
+  | gl.SRC_ALPHA_SATURATE  | min(As, Ad) | min(As, Ad) | min(As, Ad) |
+
+- depthMask(mask)
+
+  锁定或释放深度缓冲区的写入操作。
+
+  mask   指定是锁定深度缓冲区的写入操作(false)，还是释放之(true).
+
 ### webgl中的坐标系
 
 webgl是一个三维的坐标系，x轴是横轴，正方向向右，y轴为竖轴，正方向向上，z轴为垂直于屏幕的，正方向向外。原点在canvas画布的中心，并且画布的大小是从-1到1.
@@ -667,6 +697,16 @@ $$
 
 1. 开启混合功能  gl.enable(gl.BLEND);
 2. 指定混合函数  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+
+α混合与深度冲突不可以同时存在，我们知道，α混合发生在绘制片元的过程，而当隐藏面消除功能开启时，被隐藏的片元不会被绘制，所以也就不会发生混合过程，更不会有半透明的效果。实际上，只需要关闭隐藏面消除的功能即可。
+
+但是上面这种解决方案是有问题的，如果关闭隐藏面消除功能，那些不透明物体的前后关系就会乱套了。实际上，通过某种机制，可以同时实现隐藏面消除和半透明效果，我们只需要：
+
+1. 开启隐藏面消除功能。   gl.enable(gl.DEPTH_TEST)
+2. 绘制所有不透明的物体。
+3. 锁定用于进行隐藏面消除的深度缓冲区的写入操作，使之只读。   gl.depthMask(false)
+4. 绘制所有半透明物体，注意他们应当按照深度进行排序，然后从后向前绘制。
+5. 释放深度缓冲区，使之可读可写。   gl.depthMask(true)
 
 ### JavaScript与着色器之间的数据传输
 
