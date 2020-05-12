@@ -6,7 +6,7 @@ const webpack = require('webpack');
 module.exports = {
     mode: 'development',
     devtool: 'inline-source-map',
-    entry: './src/blendedCube.js',
+    entry: './src/programObject.js',
     output: {
         filename: '[name].bundle.js',
         path: path.resolve(__dirname, 'dist')
